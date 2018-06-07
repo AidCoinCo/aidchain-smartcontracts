@@ -1,5 +1,6 @@
 import assertRevert from './helpers/assertRevert';
-import expectEvent from './helpers/expectEvent';
+
+import shouldBehaveLikeRBACManager from './RBACManager.behaviour';
 
 const BigNumber = web3.BigNumber;
 
@@ -11,142 +12,88 @@ require('chai')
   .should();
 
 contract('OnlusCertification', function (accounts) {
-  let mock;
-
   const [
     owner,
     anyone,
-    futureManager,
     onlusWallet,
     ...managers
   ] = accounts;
 
-  before(async () => {
-    mock = await OnlusCertification.new({ from: owner });
-
-    for (let i = 0; i < 3; i++) {
-      await mock.addManager(managers[i], { from: owner }).should.be.fulfilled;
-    }
+  before(async function () {
+    this.mock = await OnlusCertification.new({ from: owner });
   });
 
-  context('in normal conditions', () => {
-    it('allows owner to add a manager', async () => {
-      await mock.addManager(managers[3], { from: owner }).should.be.fulfilled;
+  shouldBehaveLikeRBACManager(accounts);
+
+  describe('onlus certification', function () {
+    it('allows owner to add a wallet certification', async function () {
+      const onlusId = 1;
+      await this.mock.addWalletCertification(onlusWallet, onlusId, { from: owner }).should.be.fulfilled;
     });
 
-    it('allows owner to remove a manager', async () => {
-      await mock.removeManager(managers[2], { from: owner }).should.be.fulfilled;
+    it('allows owner to remove a wallet certification', async function () {
+      const onlusId = 1;
+      await this.mock.addWalletCertification(onlusWallet, onlusId, { from: owner }).should.be.fulfilled;
+      await this.mock.removeWalletCertification(onlusWallet, { from: owner }).should.be.fulfilled;
     });
 
-    it('announces a RoleAdded event on addRole', async () => {
-      await expectEvent.inTransaction(
-        mock.addManager(futureManager, { from: owner }),
-        'RoleAdded'
-      );
+    it('allows manager to add a wallet certification', async function () {
+      const onlusId = 1;
+      await this.mock.addManager(managers[0], { from: owner }).should.be.fulfilled;
+      await this.mock.addWalletCertification(onlusWallet, onlusId, { from: managers[0] }).should.be.fulfilled;
     });
 
-    it('announces a RoleRemoved event on removeRole', async () => {
-      await expectEvent.inTransaction(
-        mock.removeManager(futureManager, { from: owner }),
-        'RoleRemoved'
-      );
+    it('allows managers to remove a wallet certification', async function () {
+      const onlusId = 1;
+      await this.mock.addWalletCertification(onlusWallet, onlusId, { from: managers[0] }).should.be.fulfilled;
+      await this.mock.removeWalletCertification(onlusWallet, { from: managers[0] }).should.be.fulfilled;
     });
-  });
 
-  context('in adversarial conditions', () => {
-    it('does not allow a manager to add another manager', async () => {
+    it('does not allow "anyone" to add a wallet certification', async function () {
+      const onlusId = 1;
       await assertRevert(
-        mock.addManager(futureManager, { from: managers[0] })
+        this.mock.addWalletCertification(onlusWallet, onlusId, { from: anyone })
       );
     });
 
-    it('does not allow "anyone" to add a manager', async () => {
+    it('does not allow "anyone" to remove a wallet certification', async function () {
       await assertRevert(
-        mock.addManager(futureManager, { from: anyone })
-      );
-    });
-
-    it('does not allow a manager to remove another manager', async () => {
-      await assertRevert(
-        mock.removeManager(managers[1], { from: managers[0] })
-      );
-    });
-
-    it('does not allow "anyone" to remove a manager', async () => {
-      await assertRevert(
-        mock.removeManager(managers[1], { from: anyone })
+        this.mock.removeWalletCertification(onlusWallet, { from: anyone })
       );
     });
   });
 
-  context('onlus certification', () => {
-    it('allows owner to add a wallet certification', async () => {
-      const onlusId = 1;
-      await mock.addWalletCertification(onlusWallet, onlusId, { from: owner }).should.be.fulfilled;
-    });
-
-    it('allows owner to remove a wallet certification', async () => {
-      const onlusId = 1;
-      await mock.addWalletCertification(onlusWallet, onlusId, { from: owner }).should.be.fulfilled;
-      await mock.removeWalletCertification(onlusWallet, { from: owner }).should.be.fulfilled;
-    });
-
-    it('allows manager to add a wallet certification', async () => {
-      const onlusId = 1;
-      await mock.addWalletCertification(onlusWallet, onlusId, { from: managers[0] }).should.be.fulfilled;
-    });
-
-    it('allows managers to remove a wallet certification', async () => {
-      const onlusId = 1;
-      await mock.addWalletCertification(onlusWallet, onlusId, { from: managers[0] }).should.be.fulfilled;
-      await mock.removeWalletCertification(onlusWallet, { from: managers[0] }).should.be.fulfilled;
-    });
-
-    it('does not allow "anyone" to add a wallet certification', async () => {
-      const onlusId = 1;
-      await assertRevert(
-        mock.addWalletCertification(onlusWallet, onlusId, { from: anyone })
-      );
-    });
-
-    it('does not allow "anyone" to remove a wallet certification', async () => {
-      await assertRevert(
-        mock.removeWalletCertification(onlusWallet, { from: anyone })
-      );
-    });
-  });
-
-  context('low level certification', () => {
-    it('wallet address should have the right id set after certification added', async () => {
+  describe('low level certification', function () {
+    it('wallet address should have the right id set after certification added', async function () {
       const onlusId = 2;
-      await mock.addWalletCertification(onlusWallet, onlusId, { from: owner });
+      await this.mock.addWalletCertification(onlusWallet, onlusId, { from: owner });
 
-      const certificationId = await mock.walletMapping(onlusWallet);
+      const certificationId = await this.mock.walletMapping(onlusWallet);
       certificationId.should.be.bignumber.equal(onlusId);
     });
 
-    it('wallet address id should be zero after certification removed', async () => {
+    it('wallet address id should be zero after certification removed', async function () {
       const onlusId = 2;
-      await mock.addWalletCertification(onlusWallet, onlusId, { from: owner });
+      await this.mock.addWalletCertification(onlusWallet, onlusId, { from: owner });
 
-      const preCertificationId = await mock.walletMapping(onlusWallet);
+      const preCertificationId = await this.mock.walletMapping(onlusWallet);
       preCertificationId.should.be.bignumber.equal(onlusId);
 
-      await mock.removeWalletCertification(onlusWallet, { from: owner });
+      await this.mock.removeWalletCertification(onlusWallet, { from: owner });
 
-      const postCertificationId = await mock.walletMapping(onlusWallet);
+      const postCertificationId = await this.mock.walletMapping(onlusWallet);
       postCertificationId.should.be.bignumber.equal(0);
     });
 
-    it('should fail to add certification if invalid id', async () => {
+    it('should fail to add certification if invalid id', async function () {
       await assertRevert(
-        mock.addWalletCertification(onlusWallet, 0, { from: owner })
+        this.mock.addWalletCertification(onlusWallet, 0, { from: owner })
       );
     });
 
-    it('should fail to remove certification if not present', async () => {
+    it('should fail to remove certification if not present', async function () {
       await assertRevert(
-        mock.removeWalletCertification(onlusWallet, { from: owner })
+        this.mock.removeWalletCertification(onlusWallet, { from: owner })
       );
     });
   });

@@ -111,7 +111,7 @@ npm install -g truffle-flattener
 Usage 
 
 ```bash
-truffle-flattener contracts/SampleContract.sol >> dist/SampleContract.sol
+truffle-flattener contracts/CharityProject.sol >> dist/CharityProject.sol
 ```
  
  

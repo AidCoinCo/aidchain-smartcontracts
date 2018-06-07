@@ -1,24 +1,10 @@
 pragma solidity ^0.4.24;
 
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
-import "openzeppelin-solidity/contracts/ownership/rbac/RBAC.sol";
+import "./RBACManager.sol";
 
 
-contract OnlusCertification is RBAC, Ownable {
-
-  string constant ROLE_MANAGER = "manager";
-
+contract OnlusCertification is RBACManager {
   mapping (address => uint256) public walletMapping;
-
-  modifier onlyOwnerOrManager()
-  {
-    require(msg.sender == owner || hasRole(msg.sender, ROLE_MANAGER));
-    _;
-  }
-
-  constructor() public {
-    addRole(msg.sender, ROLE_MANAGER);
-  }
 
   function addWalletCertification(address _wallet, uint256 _id) onlyOwnerOrManager public {
     require(_id > 0);
@@ -28,13 +14,5 @@ contract OnlusCertification is RBAC, Ownable {
   function removeWalletCertification(address _wallet) onlyOwnerOrManager public {
     require(walletMapping[_wallet] != 0);
     walletMapping[_wallet] = 0;
-  }
-
-  function addManager(address _manager) onlyOwner public {
-    addRole(_manager, ROLE_MANAGER);
-  }
-
-  function removeManager(address _manager) onlyOwner public {
-    removeRole(_manager, ROLE_MANAGER);
   }
 }
