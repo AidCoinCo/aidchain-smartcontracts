@@ -1,7 +1,7 @@
 {
-  "name": "smart-contract-box",
+  "name": "aidchain-smartcontracts",
   "version": "1.0.0",
-  "description": "A ready to go boilerplate for Smart Contracts creation",
+  "description": "Smart contracts for the AidChain platform",
   "keywords": [
     "solidity",
     "ethereum",
@@ -30,11 +30,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/paneedesign/smart-contract-box.git"
+    "url": ""
   },
-  "homepage": "https://github.com/paneedesign/smart-contract-box/",
+  "homepage": "https://www.aidchain.co",
   "bugs": {
-    "url": "https://github.com/paneedesign/smart-contract-box/issues"
+    "url": ""
   },
   "author": "paneedesign.com",
   "contributors": [

@@ -1,10 +1,4 @@
-# Solidity Project
-
-[![Build Status](https://travis-ci.org/paneedesign/smart-contract-box.svg?branch=master)](https://travis-ci.org/paneedesign/smart-contract-box) 
-[![Coverage Status](https://coveralls.io/repos/github/paneedesign/smart-contract-box/badge.svg)](https://coveralls.io/github/paneedesign/smart-contract-box)
-
-
-A ready to go boilerplate for Smart Contracts creation.
+# AidChain Platform Smart Contracts
  
 
 Code created using [Open Zeppelin (openzeppelin-solidity)](https://github.com/OpenZeppelin/openzeppelin-solidity) and [Truffle Framework](https://github.com/trufflesuite/truffle).
