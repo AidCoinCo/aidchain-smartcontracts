@@ -80,14 +80,14 @@ contract('CharityProject', function (accounts) {
     describe('owner and wallet are the same and additional manager is different', function () {
       beforeEach(async function () {
         this.mock = await CharityProject.new(
-            this.goal,
-            this.openingTime,
-            this.closingTime,
-            onlusWallet,
-            this.token.address,
-            this.canWithdrawBeforeEnd,
-            additionalManager,
-            { from: onlusWallet }
+          this.goal,
+          this.openingTime,
+          this.closingTime,
+          onlusWallet,
+          this.token.address,
+          this.canWithdrawBeforeEnd,
+          additionalManager,
+          { from: onlusWallet }
         );
       });
 
@@ -110,14 +110,14 @@ contract('CharityProject', function (accounts) {
     describe('wallet is different and owner and additional manager are the same', function () {
       beforeEach(async function () {
         this.mock = await CharityProject.new(
-            this.goal,
-            this.openingTime,
-            this.closingTime,
-            onlusWallet,
-            this.token.address,
-            this.canWithdrawBeforeEnd,
-            additionalManager,
-            { from: additionalManager }
+          this.goal,
+          this.openingTime,
+          this.closingTime,
+          onlusWallet,
+          this.token.address,
+          this.canWithdrawBeforeEnd,
+          additionalManager,
+          { from: additionalManager }
         );
       });
 
@@ -405,6 +405,97 @@ contract('CharityProject', function (accounts) {
       await this.token.transfer(this.mock.address, tokenAmount, { from: userWallet });
       const post = await this.token.balanceOf(this.mock.address);
       post.minus(pre).should.be.bignumber.equal(tokenAmount);
+    });
+  });
+
+  context.only('withdraw tokens', function () {
+    const tokenAmount = new BigNumber(20000);
+
+    beforeEach(async function () {
+      await this.token.transfer(this.mock.address, tokenAmount, { from: userWallet });
+    });
+
+    context('if has permission', function () {
+      describe('if owner is calling', function () {
+        it('transfer tokens to the selected wallet', async function () {
+          const withdrawAmount = new BigNumber(200);
+
+          const preMock = await this.token.balanceOf(this.mock.address);
+          const preWallet = await this.token.balanceOf(onlusWallet);
+
+          await this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: owner });
+
+          const postMock = await this.token.balanceOf(this.mock.address);
+          const postWallet = await this.token.balanceOf(onlusWallet);
+
+          postMock.plus(withdrawAmount).should.be.bignumber.equal(preMock);
+          postWallet.minus(preWallet).should.be.bignumber.equal(withdrawAmount);
+        });
+      });
+
+      describe('if wallet is calling', function () {
+        it('transfer tokens to the selected wallet', async function () {
+          const withdrawAmount = new BigNumber(200);
+
+          const preMock = await this.token.balanceOf(this.mock.address);
+          const preWallet = await this.token.balanceOf(onlusWallet);
+
+          await this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: onlusWallet });
+
+          const postMock = await this.token.balanceOf(this.mock.address);
+          const postWallet = await this.token.balanceOf(onlusWallet);
+
+          postMock.plus(withdrawAmount).should.be.bignumber.equal(preMock);
+          postWallet.minus(preWallet).should.be.bignumber.equal(withdrawAmount);
+        });
+      });
+
+      describe('if additional manager is calling', function () {
+        it('transfer tokens to the selected wallet', async function () {
+          const withdrawAmount = new BigNumber(200);
+
+          const preMock = await this.token.balanceOf(this.mock.address);
+          const preWallet = await this.token.balanceOf(onlusWallet);
+
+          await this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: additionalManager });
+
+          const postMock = await this.token.balanceOf(this.mock.address);
+          const postWallet = await this.token.balanceOf(onlusWallet);
+
+          postMock.plus(withdrawAmount).should.be.bignumber.equal(preMock);
+          postWallet.minus(preWallet).should.be.bignumber.equal(withdrawAmount);
+        });
+      });
+
+      describe('if destination wallet is zero address', function () {
+        it('reverts', async function () {
+          const withdrawAmount = new BigNumber(200);
+
+          await assertRevert(
+            this.mock.withdrawTokens(ZERO_ADDRESS, withdrawAmount, { from: owner })
+          );
+        });
+      });
+
+      describe('if trying to move more tokens than raised', function () {
+        it('reverts', async function () {
+          const withdrawAmount = tokenAmount.plus(1);
+
+          await assertRevert(
+            this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: owner })
+          );
+        });
+      });
+    });
+
+    describe('if hasn\'t permission (anyone is calling)', function () {
+      it('reverts', async function () {
+        const withdrawAmount = new BigNumber(200);
+
+        await assertRevert(
+          this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: anyone })
+        );
+      });
     });
   });
 });

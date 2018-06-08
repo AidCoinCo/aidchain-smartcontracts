@@ -1,10 +1,15 @@
 pragma solidity ^0.4.24;
 
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./RBACManager.sol";
 
 
 contract CharityProject is RBACManager {
+  using SafeMath for uint256;
+
+  uint256 public withdrawn;
+
   uint256 public goal;
   uint256 public openingTime;
   uint256 public closingTime;
@@ -39,6 +44,11 @@ contract CharityProject is RBACManager {
     if (_additionalManager != owner && _additionalManager != wallet) {
       addRole(_additionalManager, ROLE_MANAGER);
     }
+  }
+
+  function withdrawTokens(address _to, uint256 _value) onlyOwnerOrManager public {
+    token.transfer(_to, _value);
+    withdrawn = withdrawn.add(_value);
   }
 
   function hasStarted() public view returns (bool) {
