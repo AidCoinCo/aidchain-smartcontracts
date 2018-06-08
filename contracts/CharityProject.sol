@@ -8,6 +8,12 @@ import "./RBACManager.sol";
 contract CharityProject is RBACManager {
   using SafeMath for uint256;
 
+  modifier canWithdraw() {
+    // solium-disable-next-line security/no-block-members
+    require(canWithdrawBeforeEnd || closingTime == 0 || block.timestamp > closingTime);
+    _;
+  }
+
   uint256 public totalRaised;
   uint256 public withdrawn;
 
@@ -47,7 +53,7 @@ contract CharityProject is RBACManager {
     }
   }
 
-  function withdrawTokens(address _to, uint256 _value) onlyOwnerOrManager public {
+  function withdrawTokens(address _to, uint256 _value) onlyOwnerOrManager canWithdraw public {
     token.transfer(_to, _value);
     withdrawn = withdrawn.add(_value);
   }
