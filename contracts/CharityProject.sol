@@ -8,6 +8,7 @@ import "./RBACManager.sol";
 contract CharityProject is RBACManager {
   using SafeMath for uint256;
 
+  uint256 public totalRaised;
   uint256 public withdrawn;
 
   uint256 public goal;
@@ -49,6 +50,11 @@ contract CharityProject is RBACManager {
   function withdrawTokens(address _to, uint256 _value) onlyOwnerOrManager public {
     token.transfer(_to, _value);
     withdrawn = withdrawn.add(_value);
+  }
+
+  function totalRaised() public view returns (uint256) {
+    uint256 raised = token.balanceOf(this);
+    return raised.add(withdrawn);
   }
 
   function hasStarted() public view returns (bool) {

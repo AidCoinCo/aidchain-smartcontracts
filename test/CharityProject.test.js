@@ -408,7 +408,7 @@ contract('CharityProject', function (accounts) {
     });
   });
 
-  context.only('withdraw tokens', function () {
+  context('withdraw tokens', function () {
     const tokenAmount = new BigNumber(20000);
 
     beforeEach(async function () {
@@ -486,6 +486,14 @@ contract('CharityProject', function (accounts) {
           );
         });
       });
+
+      it('withdrawn value should track withdrawn', async function () {
+        const withdrawAmount = new BigNumber(200);
+        await this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: owner });
+
+        const withdrawn = await this.mock.withdrawn();
+        withdrawn.should.be.bignumber.equal(withdrawAmount);
+      });
     });
 
     describe('if hasn\'t permission (anyone is calling)', function () {
@@ -495,6 +503,38 @@ contract('CharityProject', function (accounts) {
         await assertRevert(
           this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: anyone })
         );
+      });
+    });
+  });
+
+  context('checking total raised', function () {
+    describe('after creation', function () {
+      it('should be zero', async function () {
+        const raised = await this.mock.totalRaised();
+        raised.should.be.bignumber.equal(0);
+      });
+    });
+
+    describe('after donation', function () {
+      it('should be equal to donation', async function () {
+        const tokenAmount = new BigNumber(20000);
+        await this.token.transfer(this.mock.address, tokenAmount, { from: userWallet });
+
+        const raised = await this.mock.totalRaised();
+        raised.should.be.bignumber.equal(tokenAmount);
+      });
+    });
+
+    describe('after withdraw', function () {
+      it('should be equal to donation', async function () {
+        const tokenAmount = new BigNumber(20000);
+        await this.token.transfer(this.mock.address, tokenAmount, { from: userWallet });
+
+        const withdrawAmount = new BigNumber(200);
+        await this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: owner });
+
+        const raised = await this.mock.totalRaised();
+        raised.should.be.bignumber.equal(tokenAmount);
       });
     });
   });
