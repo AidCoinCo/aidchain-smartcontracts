@@ -23,7 +23,9 @@ contract('OnlusCertification', function (accounts) {
     this.mock = await OnlusCertification.new({ from: owner });
   });
 
-  shouldBehaveLikeRBACManager(accounts);
+  context('like a RBACManager', function () {
+    shouldBehaveLikeRBACManager(accounts);
+  });
 
   describe('onlus certification', function () {
     it('allows owner to add a wallet certification', async function () {
