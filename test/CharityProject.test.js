@@ -1,3 +1,4 @@
+import ether from './helpers/ether';
 import assertRevert from './helpers/assertRevert';
 import { advanceBlock } from './helpers/advanceToBlock';
 import { increaseTimeTo, duration } from './helpers/increaseTime';
@@ -304,6 +305,20 @@ contract('CharityProject', function (accounts) {
         const goalReached = await this.mock.goalReached();
         goalReached.should.be.equal(true);
       });
+    });
+  });
+
+  describe('accepting payments', function () {
+    it('should reject ETH payments', async function () {
+      await assertRevert(this.mock.send(ether(1), { from: anyone }));
+    });
+
+    it('should accept token payments', async function () {
+      const tokenAmount = new BigNumber(200);
+      const pre = await this.token.balanceOf(this.mock.address);
+      await this.token.transfer(this.mock.address, tokenAmount, { from: userWallet });
+      const post = await this.token.balanceOf(this.mock.address);
+      post.minus(pre).should.be.bignumber.equal(tokenAmount);
     });
   });
 });
