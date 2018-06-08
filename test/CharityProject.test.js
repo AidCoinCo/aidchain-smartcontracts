@@ -22,9 +22,9 @@ contract('CharityProject', function (accounts) {
   const [
     owner,
     anyone,
+    additionalManager,
     onlusWallet,
     userWallet,
-    ...managers
   ] = accounts;
 
   before(async function () {
@@ -50,6 +50,7 @@ contract('CharityProject', function (accounts) {
       onlusWallet,
       this.token.address,
       this.canWithdrawBeforeEnd,
+      additionalManager,
       { from: owner }
     );
   });
@@ -59,6 +60,83 @@ contract('CharityProject', function (accounts) {
   });
 
   context('creating a valid project', function () {
+    describe('owner, wallet and additional manager are different', function () {
+      it('contract deployer should be contract owner', async function () {
+        const contractOwner = await this.mock.owner();
+        contractOwner.should.be.equal(owner);
+      });
+
+      it('charity wallet should have the manager role', async function () {
+        const hasManagerRole = await this.mock.hasRole(onlusWallet, 'manager');
+        hasManagerRole.should.be.equal(true);
+      });
+
+      it('additional manager should have the manager role', async function () {
+        const hasManagerRole = await this.mock.hasRole(additionalManager, 'manager');
+        hasManagerRole.should.be.equal(true);
+      });
+    });
+
+    describe('owner and wallet are the same and additional manager is different', function () {
+      beforeEach(async function () {
+        this.mock = await CharityProject.new(
+            this.goal,
+            this.openingTime,
+            this.closingTime,
+            onlusWallet,
+            this.token.address,
+            this.canWithdrawBeforeEnd,
+            additionalManager,
+            { from: onlusWallet }
+        );
+      });
+
+      it('contract deployer should be contract owner', async function () {
+        const contractOwner = await this.mock.owner();
+        contractOwner.should.be.equal(onlusWallet);
+      });
+
+      it('charity wallet should have the manager role', async function () {
+        const hasManagerRole = await this.mock.hasRole(onlusWallet, 'manager');
+        hasManagerRole.should.be.equal(true);
+      });
+
+      it('additional manager should have the manager role', async function () {
+        const hasManagerRole = await this.mock.hasRole(additionalManager, 'manager');
+        hasManagerRole.should.be.equal(true);
+      });
+    });
+
+    describe('wallet is different and owner and additional manager are the same', function () {
+      beforeEach(async function () {
+        this.mock = await CharityProject.new(
+            this.goal,
+            this.openingTime,
+            this.closingTime,
+            onlusWallet,
+            this.token.address,
+            this.canWithdrawBeforeEnd,
+            additionalManager,
+            { from: additionalManager }
+        );
+      });
+
+      it('contract deployer should be contract owner', async function () {
+        const contractOwner = await this.mock.owner();
+        contractOwner.should.be.equal(additionalManager);
+      });
+
+      it('charity wallet should have the manager role', async function () {
+        const hasManagerRole = await this.mock.hasRole(onlusWallet, 'manager');
+        hasManagerRole.should.be.equal(true);
+      });
+
+      it('additional manager should have the manager role', async function () {
+        const hasManagerRole = await this.mock.hasRole(additionalManager, 'manager');
+        hasManagerRole.should.be.equal(true);
+      });
+    });
+
     describe('if opening time is zero', function () {
       it('success', async function () {
         await CharityProject.new(
@@ -68,6 +146,7 @@ contract('CharityProject', function (accounts) {
           onlusWallet,
           this.token.address,
           this.canWithdrawBeforeEnd,
+          additionalManager,
           { from: owner }
         ).should.be.fulfilled;
       });
@@ -82,6 +161,7 @@ contract('CharityProject', function (accounts) {
           onlusWallet,
           this.token.address,
           this.canWithdrawBeforeEnd,
+          additionalManager,
           { from: owner }
         ).should.be.fulfilled;
       });
@@ -96,6 +176,7 @@ contract('CharityProject', function (accounts) {
           onlusWallet,
           this.token.address,
           this.canWithdrawBeforeEnd,
+          additionalManager,
           { from: owner }
         ).should.be.fulfilled;
       });
@@ -111,6 +192,7 @@ contract('CharityProject', function (accounts) {
             onlusWallet,
             this.token.address,
             this.canWithdrawBeforeEnd,
+            additionalManager,
             { from: owner }
           )
         );
@@ -127,6 +209,7 @@ contract('CharityProject', function (accounts) {
             ZERO_ADDRESS,
             this.token.address,
             this.canWithdrawBeforeEnd,
+            additionalManager,
             { from: owner }
           )
         );
@@ -143,6 +226,7 @@ contract('CharityProject', function (accounts) {
             onlusWallet,
             ZERO_ADDRESS,
             this.canWithdrawBeforeEnd,
+            additionalManager,
             { from: owner }
           )
         );
@@ -193,6 +277,7 @@ contract('CharityProject', function (accounts) {
             onlusWallet,
             this.token.address,
             this.canWithdrawBeforeEnd,
+            additionalManager,
             { from: owner }
           );
         });
@@ -231,6 +316,7 @@ contract('CharityProject', function (accounts) {
             onlusWallet,
             this.token.address,
             this.canWithdrawBeforeEnd,
+            additionalManager,
             { from: owner }
           );
 

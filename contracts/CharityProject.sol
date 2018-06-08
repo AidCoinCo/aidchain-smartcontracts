@@ -18,7 +18,8 @@ contract CharityProject is RBACManager {
     uint256 _closingTime,
     address _wallet,
     ERC20 _token,
-    bool _canWithdrawBeforeEnd
+    bool _canWithdrawBeforeEnd,
+    address _additionalManager
   ) public {
     require(_wallet != address(0));
     require(_token != address(0));
@@ -30,6 +31,14 @@ contract CharityProject is RBACManager {
     wallet = _wallet;
     token = _token;
     canWithdrawBeforeEnd = _canWithdrawBeforeEnd;
+
+    if (wallet != owner) {
+      addRole(wallet, ROLE_MANAGER);
+    }
+
+    if (_additionalManager != owner && _additionalManager != wallet) {
+      addRole(_additionalManager, ROLE_MANAGER);
+    }
   }
 
   function hasStarted() public view returns (bool) {
