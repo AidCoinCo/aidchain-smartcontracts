@@ -266,6 +266,112 @@ contract('CharityProject', function (accounts) {
     });
   });
 
+  context.only('editing properties', function () {
+    describe('changing goal', function () {
+      describe('if owner is calling', function () {
+        it('has the new goal', async function () {
+          const newGoal = new BigNumber(2000);
+          await this.mock.setGoal(newGoal, { from: owner });
+          const goal = await this.mock.goal();
+          goal.should.be.bignumber.equal(newGoal);
+        });
+      });
+
+      describe('if anyone is calling', function () {
+        it('reverts', async function () {
+          const newGoal = new BigNumber(2000);
+          await assertRevert(
+            this.mock.setGoal(newGoal, { from: onlusWallet })
+          );
+        });
+      });
+    });
+
+    describe('changing times', function () {
+      describe('if owner is calling', function () {
+        it('has the new times', async function () {
+          const newOpeningTime = latestTime() + duration.weeks(1);
+          const newClosingTime = newOpeningTime + duration.weeks(1);
+
+          await this.mock.setTimes(newOpeningTime, newClosingTime, { from: owner });
+
+          const openingTime = await this.mock.openingTime();
+          openingTime.should.be.bignumber.equal(newOpeningTime);
+          const closingTime = await this.mock.closingTime();
+          closingTime.should.be.bignumber.equal(newClosingTime);
+        });
+
+        describe('if closing time is zero', function () {
+          it('success', async function () {
+            const newOpeningTime = latestTime() + duration.weeks(1);
+            const newClosingTime = 0;
+            await this.mock.setTimes(newOpeningTime, newClosingTime, { from: owner })
+              .should.be.fulfilled;
+          });
+        });
+
+        describe('if opening time is zero', function () {
+          it('success', async function () {
+            const newOpeningTime = 0;
+            const newClosingTime = latestTime() + duration.weeks(1);
+            await this.mock.setTimes(newOpeningTime, newClosingTime, { from: owner })
+              .should.be.fulfilled;
+          });
+        });
+
+        describe('if both opening and closing time are zero', function () {
+          it('success', async function () {
+            const newOpeningTime = 0;
+            const newClosingTime = 0;
+            await this.mock.setTimes(newOpeningTime, newClosingTime, { from: owner })
+              .should.be.fulfilled;
+          });
+        });
+
+        describe('if closing time is before opening time', function () {
+          it('reverts', async function () {
+            const newOpeningTime = latestTime() + duration.weeks(1);
+            const newClosingTime = newOpeningTime - duration.seconds(1);
+            await assertRevert(
+              this.mock.setTimes(newOpeningTime, newClosingTime, { from: owner })
+            );
+          });
+        });
+      });
+
+      describe('if anyone is calling', function () {
+        it('reverts', async function () {
+          const newOpeningTime = latestTime() + duration.weeks(1);
+          const newClosingTime = newOpeningTime + duration.weeks(1);
+          await assertRevert(
+            this.mock.setTimes(newOpeningTime, newClosingTime, { from: onlusWallet })
+          );
+        });
+      });
+    });
+
+    describe('changing canWithdrawBeforeEnd', function () {
+      describe('if owner is calling', function () {
+        it('has the new canWithdrawBeforeEnd', async function () {
+          const newCanWithdrawBeforeEnd = false;
+          await this.mock.setCanWithdrawBeforeEnd(newCanWithdrawBeforeEnd, { from: owner });
+          const canWithdrawBeforeEnd = await this.mock.canWithdrawBeforeEnd();
+          canWithdrawBeforeEnd.should.be.equal(newCanWithdrawBeforeEnd);
+        });
+      });
+
+      describe('if anyone is calling', function () {
+        it('reverts', async function () {
+          const canWithdrawBeforeEnd = false;
+          await this.mock.setCanWithdrawBeforeEnd(canWithdrawBeforeEnd, { from: owner });
+          await assertRevert(
+            this.mock.setCanWithdrawBeforeEnd(canWithdrawBeforeEnd, { from: onlusWallet })
+          );
+        });
+      });
+    });
+  });
+
   context('check all boolean controls', function () {
     describe('if before opening time', function () {
       describe('if opening time is equal to zero', function () {

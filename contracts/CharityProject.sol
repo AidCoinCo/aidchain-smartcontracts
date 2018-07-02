@@ -76,4 +76,19 @@ contract CharityProject is RBACManager {
   function goalReached() public view returns (bool) {
     return token.balanceOf(this) >= goal;
   }
+
+  function setGoal(uint256 _newGoal) onlyOwner public {
+    goal = _newGoal;
+  }
+
+  function setTimes(uint256 _openingTime, uint256 _closingTime) onlyOwner public {
+    require(_closingTime == 0 || _closingTime >= _openingTime);
+
+    openingTime = _openingTime;
+    closingTime = _closingTime;
+  }
+
+  function setCanWithdrawBeforeEnd(bool _canWithdrawBeforeEnd) onlyOwner public {
+    canWithdrawBeforeEnd = _canWithdrawBeforeEnd;
+  }
 }
