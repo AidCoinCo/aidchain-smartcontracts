@@ -14,10 +14,9 @@ contract CharityProject is RBACManager {
     _;
   }
 
-  uint256 public totalRaised;
   uint256 public withdrawn;
 
-  uint256 public goal;
+  uint256 public maxGoal;
   uint256 public openingTime;
   uint256 public closingTime;
   address public wallet;
@@ -25,7 +24,7 @@ contract CharityProject is RBACManager {
   bool public canWithdrawBeforeEnd;
 
   constructor (
-    uint256 _goal,
+    uint256 _maxGoal,
     uint256 _openingTime,
     uint256 _closingTime,
     address _wallet,
@@ -37,7 +36,7 @@ contract CharityProject is RBACManager {
     require(_token != address(0));
     require(_closingTime == 0 || _closingTime >= _openingTime);
 
-    goal = _goal;
+    maxGoal = _maxGoal;
     openingTime = _openingTime;
     closingTime = _closingTime;
     wallet = _wallet;
@@ -73,12 +72,12 @@ contract CharityProject is RBACManager {
     return closingTime == 0 ? false : block.timestamp > closingTime;
   }
 
-  function goalReached() public view returns (bool) {
-    return token.balanceOf(this) >= goal;
+  function maxGoalReached() public view returns (bool) {
+    return totalRaised() >= maxGoal;
   }
 
-  function setGoal(uint256 _newGoal) onlyOwner public {
-    goal = _newGoal;
+  function setMaxGoal(uint256 _newMaxGoal) onlyOwner public {
+    maxGoal = _newMaxGoal;
   }
 
   function setTimes(uint256 _openingTime, uint256 _closingTime) onlyOwner public {
