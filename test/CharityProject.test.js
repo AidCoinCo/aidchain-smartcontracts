@@ -266,7 +266,7 @@ contract('CharityProject', function (accounts) {
     });
   });
 
-  context.only('editing properties', function () {
+  context('editing properties', function () {
     describe('changing goal', function () {
       describe('if owner is calling', function () {
         it('has the new goal', async function () {
