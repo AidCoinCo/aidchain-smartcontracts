@@ -48,7 +48,7 @@ contract CharityProject is RBACManager {
       addRole(wallet, ROLE_MANAGER);
     }
 
-    if (_additionalManager != owner && _additionalManager != wallet) {
+    if (_additionalManager != address(0) && _additionalManager != owner && _additionalManager != wallet) {
       addRole(_additionalManager, ROLE_MANAGER);
     }
   }
