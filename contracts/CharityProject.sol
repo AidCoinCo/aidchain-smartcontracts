@@ -45,11 +45,11 @@ contract CharityProject is RBACManager {
     canWithdrawBeforeEnd = _canWithdrawBeforeEnd;
 
     if (wallet != owner) {
-      addRole(wallet, ROLE_MANAGER);
+      addManager(wallet);
     }
 
     if (_additionalManager != address(0) && _additionalManager != owner && _additionalManager != wallet) {
-      addRole(_additionalManager, ROLE_MANAGER);
+      addManager(_additionalManager);
     }
   }
 
