@@ -1,4 +1,7 @@
 # AidChain Platform Smart Contracts
+
+[![Build Status](https://travis-ci.org/AidCoinCo/aidchain-smartcontracts.svg?branch=master)](https://travis-ci.org/AidCoinCo/aidchain-smartcontracts) 
+[![Coverage Status](https://coveralls.io/repos/github/AidCoinCo/aidchain-smartcontracts/badge.svg?branch=master)](https://coveralls.io/github/AidCoinCo/aidchain-smartcontracts?branch=master)
  
 Website: [www.aidchain.co](https://www.aidchain.co)
 

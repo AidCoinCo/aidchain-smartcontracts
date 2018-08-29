@@ -1,7 +1,7 @@
 {
   "name": "aidchain-smartcontracts",
   "version": "1.0.0",
-  "description": "Smart contracts for the AidChain platform",
+  "description": "Smart Contracts for the AidChain platform",
   "keywords": [
     "solidity",
     "ethereum",
