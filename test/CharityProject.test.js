@@ -1,10 +1,10 @@
-import ether from './helpers/ether';
-import assertRevert from './helpers/assertRevert';
-import { advanceBlock } from './helpers/advanceToBlock';
-import { increaseTimeTo, duration } from './helpers/increaseTime';
-import latestTime from './helpers/latestTime';
+const { advanceBlock } = require('./helpers/advanceToBlock');
+const { duration, increaseTimeTo } = require('./helpers/increaseTime');
+const { latestTime } = require('./helpers/latestTime');
+const { ether } = require('./helpers/ether');
+const { assertRevert } = require('./helpers/assertRevert');
 
-import shouldBehaveLikeRBACManager from './RBACManager.behaviour';
+const { shouldBehaveLikeRBACManager } = require('./behaviours/RBACManager.behaviour');
 
 const BigNumber = web3.BigNumber;
 
@@ -34,7 +34,7 @@ contract('CharityProject', function (accounts) {
 
   beforeEach(async function () {
     this.maxGoal = new BigNumber(1000);
-    this.openingTime = latestTime() + duration.weeks(1);
+    this.openingTime = (await latestTime()) + duration.weeks(1);
     this.closingTime = this.openingTime + duration.weeks(1);
     this.afterOpeningTime = this.openingTime + duration.seconds(1);
     this.afterClosingTime = this.closingTime + duration.seconds(1);
@@ -290,7 +290,7 @@ contract('CharityProject', function (accounts) {
     describe('changing times', function () {
       describe('if owner is calling', function () {
         it('has the new times', async function () {
-          const newOpeningTime = latestTime() + duration.weeks(1);
+          const newOpeningTime = (await latestTime()) + duration.weeks(1);
           const newClosingTime = newOpeningTime + duration.weeks(1);
 
           await this.mock.setTimes(newOpeningTime, newClosingTime, { from: owner });
@@ -303,7 +303,7 @@ contract('CharityProject', function (accounts) {
 
         describe('if closing time is zero', function () {
           it('success', async function () {
-            const newOpeningTime = latestTime() + duration.weeks(1);
+            const newOpeningTime = (await latestTime()) + duration.weeks(1);
             const newClosingTime = 0;
             await this.mock.setTimes(newOpeningTime, newClosingTime, { from: owner })
               .should.be.fulfilled;
@@ -313,7 +313,7 @@ contract('CharityProject', function (accounts) {
         describe('if opening time is zero', function () {
           it('success', async function () {
             const newOpeningTime = 0;
-            const newClosingTime = latestTime() + duration.weeks(1);
+            const newClosingTime = (await latestTime()) + duration.weeks(1);
             await this.mock.setTimes(newOpeningTime, newClosingTime, { from: owner })
               .should.be.fulfilled;
           });
@@ -330,7 +330,7 @@ contract('CharityProject', function (accounts) {
 
         describe('if closing time is before opening time', function () {
           it('reverts', async function () {
-            const newOpeningTime = latestTime() + duration.weeks(1);
+            const newOpeningTime = (await latestTime()) + duration.weeks(1);
             const newClosingTime = newOpeningTime - duration.seconds(1);
             await assertRevert(
               this.mock.setTimes(newOpeningTime, newClosingTime, { from: owner })
@@ -341,7 +341,7 @@ contract('CharityProject', function (accounts) {
 
       describe('if anyone is calling', function () {
         it('reverts', async function () {
-          const newOpeningTime = latestTime() + duration.weeks(1);
+          const newOpeningTime = (await latestTime()) + duration.weeks(1);
           const newClosingTime = newOpeningTime + duration.weeks(1);
           await assertRevert(
             this.mock.setTimes(newOpeningTime, newClosingTime, { from: onlusWallet })
@@ -499,7 +499,7 @@ contract('CharityProject', function (accounts) {
       });
     });
 
-    describe.only('if is reached and then withdrawn', function () {
+    describe('if is reached and then withdrawn', function () {
       it('maxGoalReached should be true', async function () {
         await this.token.transfer(this.mock.address, this.maxGoal.add(1), { from: userWallet });
         await this.mock.withdrawTokens(onlusWallet, this.maxGoal.add(1), { from: owner }).should.be.fulfilled;

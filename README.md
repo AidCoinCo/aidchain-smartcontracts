@@ -1,18 +1,15 @@
 # AidChain Platform Smart Contracts
  
+Website: [www.aidchain.co](https://www.aidchain.co)
 
-Code created using [Open Zeppelin (openzeppelin-solidity)](https://github.com/OpenZeppelin/openzeppelin-solidity) and [Truffle Framework](https://github.com/trufflesuite/truffle).
-
- 
  
 ## Installation
 
 
-Install truffle, compiler and linter.
+Install truffle.
 
 ```bash
-npm install -g truffle      // Version 4.1.11+ required.
-npm install -g solium       // Version 1.1.7+ required
+npm install -g truffle      // Version 4.1.13+ required.
 ```
 
 Solidity version used: 0.4.24
@@ -34,12 +31,18 @@ npm install
 Use Solium
 
 ```bash
-solium -d contracts
+npm run lint:sol
+```
+
+Lint and fix all
+
+```bash
+npm run lint:all:fix
 ```
 
 
 
-## Compile, migrate and test the contracts.
+## Compile and test the contracts.
  
 
 Open the Truffle console
@@ -54,12 +57,6 @@ Compile
 compile 
 ```
 
-Migrate
-
-```bash
-migrate
-```
-
 Test
 
 ```bash
@@ -71,29 +68,10 @@ test
 ## Run server
 
 
-Run the `liteserver` development server for front-end hot reloading. For now, smart contract changes must be manually recompiled and migrated.
+Run the `liteserver` development server.
 
 ```bash
 npm run dev
-```
-
-
-
-## Security Tool
-
-
-Install [Mythril](https://github.com/ConsenSys/mythril)
-
-```bash
-pip3 install mythril
-```
-
-
-Usage 
-
-```bash
-truffle compile
-myth --truffle
 ```
 
 
@@ -111,18 +89,5 @@ npm install -g truffle-flattener
 Usage 
 
 ```bash
-truffle-flattener contracts/CharityProject.sol >> dist/CharityProject.sol
+truffle-flattener contracts/CharityProject.sol >> dist/CharityProject.dist.sol
 ```
- 
- 
- 
-## Links
-
-Solidity [Doc](https://solidity.readthedocs.io) [Github](https://solidity.readthedocs.io)
-
-OpenZeppelin [Doc](https://openzeppelin.org/api/docs/open-zeppelin.html) [Github](https://github.com/OpenZeppelin)
-
-Truffle [Doc](http://truffleframework.com/docs) [Github](https://github.com/trufflesuite/truffle)
-
-Web3.js [Doc 0.20.4](https://github.com/ethereum/wiki/wiki/JavaScript-API) [Doc 1.0](http://web3js.readthedocs.io/en/1.0) [Github](https://github.com/ethereum/web3.js)
- 

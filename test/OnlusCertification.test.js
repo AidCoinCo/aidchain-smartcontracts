@@ -1,6 +1,6 @@
-import assertRevert from './helpers/assertRevert';
+const { assertRevert } = require('./helpers/assertRevert');
 
-import shouldBehaveLikeRBACManager from './RBACManager.behaviour';
+const { shouldBehaveLikeRBACManager } = require('./behaviours/RBACManager.behaviour');
 
 const BigNumber = web3.BigNumber;
 

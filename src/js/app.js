@@ -21,14 +21,6 @@ App = {
   },
 
   initContract: function () {
-    $.getJSON('SampleContract.json', function(data) {
-      // Get the necessary contract artifact file and instantiate it with truffle-contract.
-      App.contracts.SmartContractIstance = TruffleContract(data);
-
-      // Set the provider for our contract.
-      App.contracts.SmartContractIstance.setProvider(App.web3Provider);
-    });
-
     $.getJSON('CharityProject.json', function(data) {
       // Get the necessary contract artifact file and instantiate it with truffle-contract.
       App.contracts.CharityProject = TruffleContract(data);

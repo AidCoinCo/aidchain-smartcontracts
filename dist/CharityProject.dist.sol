@@ -1,5 +1,164 @@
 pragma solidity ^0.4.24;
 
+// File: openzeppelin-solidity/contracts/access/rbac/Roles.sol
+
+/**
+ * @title Roles
+ * @author Francisco Giordano (@frangio)
+ * @dev Library for managing addresses assigned to a Role.
+ * See RBAC.sol for example usage.
+ */
+library Roles {
+  struct Role {
+    mapping (address => bool) bearer;
+  }
+
+  /**
+   * @dev give an address access to this role
+   */
+  function add(Role storage _role, address _addr)
+    internal
+  {
+    _role.bearer[_addr] = true;
+  }
+
+  /**
+   * @dev remove an address' access to this role
+   */
+  function remove(Role storage _role, address _addr)
+    internal
+  {
+    _role.bearer[_addr] = false;
+  }
+
+  /**
+   * @dev check if an address has this role
+   * // reverts
+   */
+  function check(Role storage _role, address _addr)
+    internal
+    view
+  {
+    require(has(_role, _addr));
+  }
+
+  /**
+   * @dev check if an address has this role
+   * @return bool
+   */
+  function has(Role storage _role, address _addr)
+    internal
+    view
+    returns (bool)
+  {
+    return _role.bearer[_addr];
+  }
+}
+
+// File: openzeppelin-solidity/contracts/access/rbac/RBAC.sol
+
+/**
+ * @title RBAC (Role-Based Access Control)
+ * @author Matt Condon (@Shrugs)
+ * @dev Stores and provides setters and getters for roles and addresses.
+ * Supports unlimited numbers of roles and addresses.
+ * See //contracts/mocks/RBACMock.sol for an example of usage.
+ * This RBAC method uses strings to key roles. It may be beneficial
+ * for you to write your own implementation of this interface using Enums or similar.
+ */
+contract RBAC {
+  using Roles for Roles.Role;
+
+  mapping (string => Roles.Role) private roles;
+
+  event RoleAdded(address indexed operator, string role);
+  event RoleRemoved(address indexed operator, string role);
+
+  /**
+   * @dev reverts if addr does not have role
+   * @param _operator address
+   * @param _role the name of the role
+   * // reverts
+   */
+  function checkRole(address _operator, string _role)
+    public
+    view
+  {
+    roles[_role].check(_operator);
+  }
+
+  /**
+   * @dev determine if addr has role
+   * @param _operator address
+   * @param _role the name of the role
+   * @return bool
+   */
+  function hasRole(address _operator, string _role)
+    public
+    view
+    returns (bool)
+  {
+    return roles[_role].has(_operator);
+  }
+
+  /**
+   * @dev add a role to an address
+   * @param _operator address
+   * @param _role the name of the role
+   */
+  function addRole(address _operator, string _role)
+    internal
+  {
+    roles[_role].add(_operator);
+    emit RoleAdded(_operator, _role);
+  }
+
+  /**
+   * @dev remove a role from an address
+   * @param _operator address
+   * @param _role the name of the role
+   */
+  function removeRole(address _operator, string _role)
+    internal
+  {
+    roles[_role].remove(_operator);
+    emit RoleRemoved(_operator, _role);
+  }
+
+  /**
+   * @dev modifier to scope access to a single role (uses msg.sender as addr)
+   * @param _role the name of the role
+   * // reverts
+   */
+  modifier onlyRole(string _role)
+  {
+    checkRole(msg.sender, _role);
+    _;
+  }
+
+  /**
+   * @dev modifier to scope access to a set of roles (uses msg.sender as addr)
+   * @param _roles the names of the roles to scope access to
+   * // reverts
+   *
+   * @TODO - when solidity supports dynamic arrays as arguments to modifiers, provide this
+   *  see: https://github.com/ethereum/solidity/issues/2467
+   */
+  // modifier onlyRoles(string[] _roles) {
+  //     bool hasAnyRole = false;
+  //     for (uint8 i = 0; i < _roles.length; i++) {
+  //         if (hasRole(msg.sender, _roles[i])) {
+  //             hasAnyRole = true;
+  //             break;
+  //         }
+  //     }
+
+  //     require(hasAnyRole);
+
+  //     _;
+  // }
+}
+
 // File: openzeppelin-solidity/contracts/ownership/Ownable.sol
 
 /**
@@ -36,6 +195,9 @@ contract Ownable {
 
   /**
    * @dev Allows the current owner to relinquish control of the contract.
+   * @notice Renouncing to ownership will leave the contract without an owner.
+   * It will not be possible to call the functions with the `onlyOwner`
+   * modifier anymore.
    */
   function renounceOwnership() public onlyOwner {
     emit OwnershipRenounced(owner);
@@ -61,174 +223,16 @@ contract Ownable {
   }
 }
 
-// File: openzeppelin-solidity/contracts/ownership/rbac/Roles.sol
-
-/**
- * @title Roles
- * @author Francisco Giordano (@frangio)
- * @dev Library for managing addresses assigned to a Role.
- *      See RBAC.sol for example usage.
- */
-library Roles {
-  struct Role {
-    mapping (address => bool) bearer;
-  }
-
-  /**
-   * @dev give an address access to this role
-   */
-  function add(Role storage role, address addr)
-    internal
-  {
-    role.bearer[addr] = true;
-  }
-
-  /**
-   * @dev remove an address' access to this role
-   */
-  function remove(Role storage role, address addr)
-    internal
-  {
-    role.bearer[addr] = false;
-  }
-
-  /**
-   * @dev check if an address has this role
-   * // reverts
-   */
-  function check(Role storage role, address addr)
-    view
-    internal
-  {
-    require(has(role, addr));
-  }
-
-  /**
-   * @dev check if an address has this role
-   * @return bool
-   */
-  function has(Role storage role, address addr)
-    view
-    internal
-    returns (bool)
-  {
-    return role.bearer[addr];
-  }
-}
-
-// File: openzeppelin-solidity/contracts/ownership/rbac/RBAC.sol
-
-/**
- * @title RBAC (Role-Based Access Control)
- * @author Matt Condon (@Shrugs)
- * @dev Stores and provides setters and getters for roles and addresses.
- * @dev Supports unlimited numbers of roles and addresses.
- * @dev See //contracts/mocks/RBACMock.sol for an example of usage.
- * This RBAC method uses strings to key roles. It may be beneficial
- *  for you to write your own implementation of this interface using Enums or similar.
- * It's also recommended that you define constants in the contract, like ROLE_ADMIN below,
- *  to avoid typos.
- */
-contract RBAC {
-  using Roles for Roles.Role;
-
-  mapping (string => Roles.Role) private roles;
-
-  event RoleAdded(address addr, string roleName);
-  event RoleRemoved(address addr, string roleName);
-
-  /**
-   * @dev reverts if addr does not have role
-   * @param addr address
-   * @param roleName the name of the role
-   * // reverts
-   */
-  function checkRole(address addr, string roleName)
-    view
-    public
-  {
-    roles[roleName].check(addr);
-  }
-
-  /**
-   * @dev determine if addr has role
-   * @param addr address
-   * @param roleName the name of the role
-   * @return bool
-   */
-  function hasRole(address addr, string roleName)
-    view
-    public
-    returns (bool)
-  {
-    return roles[roleName].has(addr);
-  }
-
-  /**
-   * @dev add a role to an address
-   * @param addr address
-   * @param roleName the name of the role
-   */
-  function addRole(address addr, string roleName)
-    internal
-  {
-    roles[roleName].add(addr);
-    emit RoleAdded(addr, roleName);
-  }
-
-  /**
-   * @dev remove a role from an address
-   * @param addr address
-   * @param roleName the name of the role
-   */
-  function removeRole(address addr, string roleName)
-    internal
-  {
-    roles[roleName].remove(addr);
-    emit RoleRemoved(addr, roleName);
-  }
-
-  /**
-   * @dev modifier to scope access to a single role (uses msg.sender as addr)
-   * @param roleName the name of the role
-   * // reverts
-   */
-  modifier onlyRole(string roleName)
-  {
-    checkRole(msg.sender, roleName);
-    _;
-  }
-
-  /**
-   * @dev modifier to scope access to a set of roles (uses msg.sender as addr)
-   * @param roleNames the names of the roles to scope access to
-   * // reverts
-   *
-   * @TODO - when solidity supports dynamic arrays as arguments to modifiers, provide this
-   *  see: https://github.com/ethereum/solidity/issues/2467
-   */
-  // modifier onlyRoles(string[] roleNames) {
-  //     bool hasAnyRole = false;
-  //     for (uint8 i = 0; i < roleNames.length; i++) {
-  //         if (hasRole(msg.sender, roleNames[i])) {
-  //             hasAnyRole = true;
-  //             break;
-  //         }
-  //     }
-
-  //     require(hasAnyRole);
-
-  //     _;
-  // }
-}
-
-// File: contracts/RBACManager.sol
+// File: contracts/access/RBACManager.sol
 
 contract RBACManager is RBAC, Ownable {
   string constant ROLE_MANAGER = "manager";
 
   modifier onlyOwnerOrManager() {
-    require(msg.sender == owner || hasRole(msg.sender, ROLE_MANAGER));
+    require(
+      msg.sender == owner || hasRole(msg.sender, ROLE_MANAGER),
+      "unauthorized"
+    );
     _;
   }
 
@@ -236,11 +240,11 @@ contract RBACManager is RBAC, Ownable {
     addRole(msg.sender, ROLE_MANAGER);
   }
 
-  function addManager(address _manager) onlyOwner public {
+  function addManager(address _manager) public onlyOwner {
     addRole(_manager, ROLE_MANAGER);
   }
 
-  function removeManager(address _manager) onlyOwner public {
+  function removeManager(address _manager) public onlyOwner {
     removeRole(_manager, ROLE_MANAGER);
   }
 }
@@ -256,43 +260,43 @@ library SafeMath {
   /**
   * @dev Multiplies two numbers, throws on overflow.
   */
-  function mul(uint256 a, uint256 b) internal pure returns (uint256 c) {
+  function mul(uint256 _a, uint256 _b) internal pure returns (uint256 c) {
     // Gas optimization: this is cheaper than asserting 'a' not being zero, but the
     // benefit is lost if 'b' is also tested.
     // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
-    if (a == 0) {
+    if (_a == 0) {
       return 0;
     }
 
-    c = a * b;
-    assert(c / a == b);
+    c = _a * _b;
+    assert(c / _a == _b);
     return c;
   }
 
   /**
   * @dev Integer division of two numbers, truncating the quotient.
   */
-  function div(uint256 a, uint256 b) internal pure returns (uint256) {
-    // assert(b > 0); // Solidity automatically throws when dividing by 0
-    // uint256 c = a / b;
-    // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-    return a / b;
+  function div(uint256 _a, uint256 _b) internal pure returns (uint256) {
+    // assert(_b > 0); // Solidity automatically throws when dividing by 0
+    // uint256 c = _a / _b;
+    // assert(_a == _b * c + _a % _b); // There is no case in which this doesn't hold
+    return _a / _b;
   }
 
   /**
   * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
   */
-  function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-    assert(b <= a);
-    return a - b;
+  function sub(uint256 _a, uint256 _b) internal pure returns (uint256) {
+    assert(_b <= _a);
+    return _a - _b;
   }
 
   /**
   * @dev Adds two numbers, throws on overflow.
   */
-  function add(uint256 a, uint256 b) internal pure returns (uint256 c) {
-    c = a + b;
-    assert(c >= a);
+  function add(uint256 _a, uint256 _b) internal pure returns (uint256 c) {
+    c = _a + _b;
+    assert(c >= _a);
     return c;
   }
 }
@@ -302,12 +306,12 @@ library SafeMath {
 /**
  * @title ERC20Basic
  * @dev Simpler version of ERC20 interface
- * @dev see https://github.com/ethereum/EIPs/issues/179
+ * See https://github.com/ethereum/EIPs/issues/179
  */
 contract ERC20Basic {
   function totalSupply() public view returns (uint256);
-  function balanceOf(address who) public view returns (uint256);
-  function transfer(address to, uint256 value) public returns (bool);
+  function balanceOf(address _who) public view returns (uint256);
+  function transfer(address _to, uint256 _value) public returns (bool);
   event Transfer(address indexed from, address indexed to, uint256 value);
 }
 
@@ -318,13 +322,13 @@ contract ERC20Basic {
  * @dev see https://github.com/ethereum/EIPs/issues/20
  */
 contract ERC20 is ERC20Basic {
-  function allowance(address owner, address spender)
+  function allowance(address _owner, address _spender)
     public view returns (uint256);
 
-  function transferFrom(address from, address to, uint256 value)
+  function transferFrom(address _from, address _to, uint256 _value)
     public returns (bool);
 
-  function approve(address spender, uint256 value) public returns (bool);
+  function approve(address _spender, uint256 _value) public returns (bool);
   event Approval(
     address indexed owner,
     address indexed spender,
@@ -338,8 +342,9 @@ contract CharityProject is RBACManager {
   using SafeMath for uint256;
 
   modifier canWithdraw() {
-    // solium-disable-next-line security/no-block-members
-    require(canWithdrawBeforeEnd || closingTime == 0 || block.timestamp > closingTime);
+    require(
+      canWithdrawBeforeEnd || closingTime == 0 || block.timestamp > closingTime, // solium-disable-line security/no-block-members
+      "can't withdraw");
     _;
   }
 
@@ -361,9 +366,12 @@ contract CharityProject is RBACManager {
     bool _canWithdrawBeforeEnd,
     address _additionalManager
   ) public {
-    require(_wallet != address(0));
-    require(_token != address(0));
-    require(_closingTime == 0 || _closingTime >= _openingTime);
+    require(_wallet != address(0), "_wallet can't be zero");
+    require(_token != address(0), "_wallet can't be zero");
+    require(
+      _closingTime == 0 || _closingTime >= _openingTime,
+      "wrong value for _closingTime"
+    );
 
     maxGoal = _maxGoal;
     openingTime = _openingTime;
@@ -376,12 +384,20 @@ contract CharityProject is RBACManager {
       addManager(wallet);
     }
 
+    // solium-disable-next-line max-len
     if (_additionalManager != address(0) && _additionalManager != owner && _additionalManager != wallet) {
       addManager(_additionalManager);
     }
   }
 
-  function withdrawTokens(address _to, uint256 _value) onlyOwnerOrManager canWithdraw public {
+  function withdrawTokens(
+    address _to,
+    uint256 _value
+  )
+  public
+  onlyOwnerOrManager
+  canWithdraw
+  {
     token.transfer(_to, _value);
     withdrawn = withdrawn.add(_value);
   }
@@ -405,18 +421,32 @@ contract CharityProject is RBACManager {
     return totalRaised() >= maxGoal;
   }
 
-  function setMaxGoal(uint256 _newMaxGoal) onlyOwner public {
+  function setMaxGoal(uint256 _newMaxGoal) public onlyOwner {
     maxGoal = _newMaxGoal;
   }
 
-  function setTimes(uint256 _openingTime, uint256 _closingTime) onlyOwner public {
-    require(_closingTime == 0 || _closingTime >= _openingTime);
+  function setTimes(
+    uint256 _openingTime,
+    uint256 _closingTime
+  )
+  public
+  onlyOwner
+  {
+    require(
+      _closingTime == 0 || _closingTime >= _openingTime,
+      "wrong value for _closingTime"
+    );
 
     openingTime = _openingTime;
     closingTime = _closingTime;
   }
 
-  function setCanWithdrawBeforeEnd(bool _canWithdrawBeforeEnd) onlyOwner public {
+  function setCanWithdrawBeforeEnd(
+    bool _canWithdrawBeforeEnd
+  )
+  public
+  onlyOwner
+  {
     canWithdrawBeforeEnd = _canWithdrawBeforeEnd;
   }
 }

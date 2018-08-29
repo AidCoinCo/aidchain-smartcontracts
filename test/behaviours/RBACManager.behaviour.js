@@ -1,11 +1,11 @@
-import assertRevert from './helpers/assertRevert';
-import expectEvent from './helpers/expectEvent';
+const { assertRevert } = require('../helpers/assertRevert');
+const expectEvent = require('../helpers/expectEvent');
 
 require('chai')
   .use(require('chai-as-promised'))
   .should();
 
-export default function shouldBehaveLikeRBACManager (accounts) {
+function shouldBehaveLikeRBACManager (accounts) {
   const [
     owner,
     anyone,
@@ -69,3 +69,7 @@ export default function shouldBehaveLikeRBACManager (accounts) {
     });
   });
 }
+
+module.exports = {
+  shouldBehaveLikeRBACManager,
+};

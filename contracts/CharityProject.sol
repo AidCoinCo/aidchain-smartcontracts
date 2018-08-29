@@ -2,15 +2,16 @@ pragma solidity ^0.4.24;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-import "./RBACManager.sol";
+import "./access/RBACManager.sol";
 
 
 contract CharityProject is RBACManager {
   using SafeMath for uint256;
 
   modifier canWithdraw() {
-    // solium-disable-next-line security/no-block-members
-    require(canWithdrawBeforeEnd || closingTime == 0 || block.timestamp > closingTime);
+    require(
+      canWithdrawBeforeEnd || closingTime == 0 || block.timestamp > closingTime, // solium-disable-line security/no-block-members
+      "can't withdraw");
     _;
   }
 
@@ -32,9 +33,12 @@ contract CharityProject is RBACManager {
     bool _canWithdrawBeforeEnd,
     address _additionalManager
   ) public {
-    require(_wallet != address(0));
-    require(_token != address(0));
-    require(_closingTime == 0 || _closingTime >= _openingTime);
+    require(_wallet != address(0), "_wallet can't be zero");
+    require(_token != address(0), "_wallet can't be zero");
+    require(
+      _closingTime == 0 || _closingTime >= _openingTime,
+      "wrong value for _closingTime"
+    );
 
     maxGoal = _maxGoal;
     openingTime = _openingTime;
@@ -47,12 +51,20 @@ contract CharityProject is RBACManager {
       addManager(wallet);
     }
 
+    // solium-disable-next-line max-len
     if (_additionalManager != address(0) && _additionalManager != owner && _additionalManager != wallet) {
       addManager(_additionalManager);
     }
   }
 
-  function withdrawTokens(address _to, uint256 _value) onlyOwnerOrManager canWithdraw public {
+  function withdrawTokens(
+    address _to,
+    uint256 _value
+  )
+  public
+  onlyOwnerOrManager
+  canWithdraw
+  {
     token.transfer(_to, _value);
     withdrawn = withdrawn.add(_value);
   }
@@ -76,18 +88,32 @@ contract CharityProject is RBACManager {
     return totalRaised() >= maxGoal;
   }
 
-  function setMaxGoal(uint256 _newMaxGoal) onlyOwner public {
+  function setMaxGoal(uint256 _newMaxGoal) public onlyOwner {
     maxGoal = _newMaxGoal;
   }
 
-  function setTimes(uint256 _openingTime, uint256 _closingTime) onlyOwner public {
-    require(_closingTime == 0 || _closingTime >= _openingTime);
+  function setTimes(
+    uint256 _openingTime,
+    uint256 _closingTime
+  )
+  public
+  onlyOwner
+  {
+    require(
+      _closingTime == 0 || _closingTime >= _openingTime,
+      "wrong value for _closingTime"
+    );
 
     openingTime = _openingTime;
     closingTime = _closingTime;
   }
 
-  function setCanWithdrawBeforeEnd(bool _canWithdrawBeforeEnd) onlyOwner public {
+  function setCanWithdrawBeforeEnd(
+    bool _canWithdrawBeforeEnd
+  )
+  public
+  onlyOwner
+  {
     canWithdrawBeforeEnd = _canWithdrawBeforeEnd;
   }
 }
