@@ -34,7 +34,7 @@ contract CharityProject is RBACManager {
     address _additionalManager
   ) public {
     require(_wallet != address(0), "_wallet can't be zero");
-    require(_token != address(0), "_wallet can't be zero");
+    require(_token != address(0), "_token can't be zero");
     require(
       _closingTime == 0 || _closingTime >= _openingTime,
       "wrong value for _closingTime"
