@@ -12,10 +12,8 @@ Website: [www.aidchain.co](https://www.aidchain.co)
 Install truffle.
 
 ```bash
-npm install -g truffle      // Version 4.1.13+ required.
+npm install -g truffle      // Version 4.1.14+ required.
 ```
-
-Solidity version used: 0.4.24
 
 
 
@@ -37,10 +35,16 @@ Use Solium
 npm run lint:sol
 ```
 
-Lint and fix all
+Use ESLint
 
 ```bash
-npm run lint:all:fix
+npm run lint:js
+```
+
+Use both and fix
+
+```bash
+npm run lint:fix
 ```
 
 
@@ -68,17 +72,6 @@ test
 
 
 
-## Run server
-
-
-Run the `liteserver` development server.
-
-```bash
-npm run dev
-```
-
-
-
 ## Optional
 
 
@@ -93,4 +86,14 @@ Usage
 
 ```bash
 truffle-flattener contracts/CharityProject.sol >> dist/CharityProject.dist.sol
+```
+
+
+
+#### Note
+
+IMPORTANT: Before commit run the lint and fix command:
+
+```bash
+npm run lint:fix
 ```
