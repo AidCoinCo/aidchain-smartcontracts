@@ -116,4 +116,20 @@ contract CharityProject is RBACManager {
   {
     canWithdrawBeforeEnd = _canWithdrawBeforeEnd;
   }
+
+  function recoverERC20(
+    address _tokenAddress,
+    address _receiverAddress,
+    uint256 _tokens
+  )
+  public
+  onlyOwnerOrManager
+  returns (bool success)
+  {
+    require(
+      _tokenAddress != address(token),
+      "to transfer project's funds use withdrawTokens"
+    );
+    return ERC20Basic(_tokenAddress).transfer(_receiverAddress, _tokens);
+  }
 }

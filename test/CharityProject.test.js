@@ -10,6 +10,7 @@ const BigNumber = web3.BigNumber;
 
 const CharityProject = artifacts.require('CharityProject');
 const AidCoinMock = artifacts.require('AidCoinMock');
+const BasicTokenMock = artifacts.require('BasicTokenMock');
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -719,6 +720,47 @@ contract('CharityProject', function (accounts) {
 
         const raised = await this.mock.totalRaised();
         raised.should.be.bignumber.equal(tokenAmount);
+      });
+    });
+  });
+
+  context('recover tokens from contract', function () {
+    const tokenAmount = new BigNumber(1000);
+
+    beforeEach(async function () {
+      this.anotherERC20 = await BasicTokenMock.new(this.mock.address, tokenAmount, { from: owner });
+    });
+
+    describe('if owner is calling', function () {
+      it('should safe transfer any ERC20 sent for error into the contract', async function () {
+        const contractPre = await this.anotherERC20.balanceOf(this.mock.address);
+        contractPre.should.be.bignumber.equal(tokenAmount);
+        const anyonePre = await this.anotherERC20.balanceOf(anyone);
+        anyonePre.should.be.bignumber.equal(0);
+
+        await this.mock.recoverERC20(this.anotherERC20.address, anyone, tokenAmount, { from: owner });
+
+        const contractPost = await this.anotherERC20.balanceOf(this.mock.address);
+        contractPost.should.be.bignumber.equal(0);
+        const anyonePost = await this.anotherERC20.balanceOf(anyone);
+        anyonePost.should.be.bignumber.equal(tokenAmount);
+      });
+
+      describe('if trying to transfer project funds', function () {
+        it('reverts', async function () {
+          await this.token.mint(this.mock.address, tokenAmount);
+          await assertRevert(
+            this.mock.recoverERC20(this.token.address, anyone, tokenAmount, { from: owner })
+          );
+        });
+      });
+    });
+
+    describe('if third party is calling', function () {
+      it('reverts', async function () {
+        await assertRevert(
+          this.mock.recoverERC20(this.anotherERC20.address, anyone, tokenAmount, { from: anyone })
+        );
       });
     });
   });
