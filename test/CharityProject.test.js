@@ -922,6 +922,66 @@ contract('CharityProject', function (accounts) {
         raised.should.be.bignumber.equal(tokenAmount);
       });
     });
+
+    describe('after withdraw of tokens and fee', function () {
+      it('should be equal to donation', async function () {
+        const tokenAmount = new BigNumber(20000);
+        await this.token.transfer(this.mock.address, tokenAmount, { from: userWallet });
+
+        const withdrawAmount = new BigNumber(200);
+        await this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: owner });
+        await this.mock.withdrawFees(anyone, withdrawAmount, { from: owner });
+
+        const raised = await this.mock.totalRaised();
+        raised.should.be.bignumber.equal(tokenAmount);
+      });
+    });
+  });
+
+  context('checking total fee', function () {
+    describe('after creation', function () {
+      it('should be zero', async function () {
+        const totalFee = await this.mock.totalFee();
+        totalFee.should.be.bignumber.equal(0);
+      });
+    });
+
+    describe('after donation', function () {
+      it('should be equal to a percent of donation', async function () {
+        const tokenAmount = new BigNumber(20000);
+        await this.token.transfer(this.mock.address, tokenAmount, { from: userWallet });
+
+        const totalFee = await this.mock.totalFee();
+        totalFee.should.be.bignumber.equal(tokenAmount.mul(this.feeInMillis).div(1000));
+      });
+    });
+
+    describe('after withdraw', function () {
+      it('should be equal to a percent of donation', async function () {
+        const tokenAmount = new BigNumber(20000);
+        await this.token.transfer(this.mock.address, tokenAmount, { from: userWallet });
+
+        const withdrawAmount = new BigNumber(200);
+        await this.mock.withdrawFees(anyone, withdrawAmount, { from: owner });
+
+        const totalFee = await this.mock.totalFee();
+        totalFee.should.be.bignumber.equal(tokenAmount.mul(this.feeInMillis).div(1000));
+      });
+    });
+
+    describe('after withdraw of fee and tokens', function () {
+      it('should be equal to a percent of donation', async function () {
+        const tokenAmount = new BigNumber(20000);
+        await this.token.transfer(this.mock.address, tokenAmount, { from: userWallet });
+
+        const withdrawAmount = new BigNumber(200);
+        await this.mock.withdrawFees(anyone, withdrawAmount, { from: owner });
+        await this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: owner });
+
+        const totalFee = await this.mock.totalFee();
+        totalFee.should.be.bignumber.equal(tokenAmount.mul(this.feeInMillis).div(1000));
+      });
+    });
   });
 
   context('recover tokens from contract', function () {

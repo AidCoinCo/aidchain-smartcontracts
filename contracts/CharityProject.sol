@@ -141,7 +141,11 @@ contract CharityProject is RBACManager {
 
   function totalRaised() public view returns (uint256) {
     uint256 raised = _token.balanceOf(this);
-    return raised.add(_withdrawnTokens);
+    return raised.add(_withdrawnTokens).add(_withdrawnFees);
+  }
+
+  function totalFee() public view returns (uint256) {
+    return totalRaised().mul(_feeInMillis).div(1000);
   }
 
   function hasStarted() public view returns (bool) {
