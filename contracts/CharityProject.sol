@@ -17,6 +17,7 @@ contract CharityProject is RBACManager {
     _;
   }
 
+  uint256 private _feeInMillis;
   uint256 private _withdrawn;
   uint256 private _maxGoal;
   uint256 private _openingTime;
@@ -26,6 +27,7 @@ contract CharityProject is RBACManager {
   bool private _canWithdrawBeforeEnd;
 
   constructor (
+    uint256 feeInMillis,
     uint256 maxGoal,
     uint256 openingTime,
     uint256 closingTime,
@@ -41,6 +43,7 @@ contract CharityProject is RBACManager {
       "wrong value for closingTime"
     );
 
+    _feeInMillis = feeInMillis;
     _maxGoal = maxGoal;
     _openingTime = openingTime;
     _closingTime = closingTime;
@@ -61,6 +64,10 @@ contract CharityProject is RBACManager {
   // -----------------------------------------
   // GETTERS
   // -----------------------------------------
+
+  function feeInMillis() public view returns(uint256) {
+    return _feeInMillis;
+  }
 
   function withdrawn() public view returns(uint256) {
     return _withdrawn;

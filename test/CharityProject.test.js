@@ -34,6 +34,7 @@ contract('CharityProject', function (accounts) {
   });
 
   beforeEach(async function () {
+    this.feeInMillis = new BigNumber(200); // 200/1000 == 20%
     this.maxGoal = new BigNumber(1000);
     this.openingTime = (await time.latest()) + time.duration.weeks(1);
     this.closingTime = this.openingTime + time.duration.weeks(1);
@@ -45,6 +46,7 @@ contract('CharityProject', function (accounts) {
     await this.token.mint(userWallet, new BigNumber(100000));
 
     this.mock = await CharityProject.new(
+      this.feeInMillis,
       this.maxGoal,
       this.openingTime,
       this.closingTime,
@@ -92,6 +94,7 @@ contract('CharityProject', function (accounts) {
     describe('owner and wallet are the same and additional manager is different', function () {
       beforeEach(async function () {
         this.mock = await CharityProject.new(
+          this.feeInMillis,
           this.maxGoal,
           this.openingTime,
           this.closingTime,
@@ -128,6 +131,7 @@ contract('CharityProject', function (accounts) {
     describe('wallet is different and owner and additional manager are the same', function () {
       beforeEach(async function () {
         this.mock = await CharityProject.new(
+          this.feeInMillis,
           this.maxGoal,
           this.openingTime,
           this.closingTime,
@@ -164,6 +168,7 @@ contract('CharityProject', function (accounts) {
     describe('if opening time is zero', function () {
       it('success', async function () {
         await CharityProject.new(
+          this.feeInMillis,
           this.maxGoal,
           0,
           this.closingTime,
@@ -179,6 +184,7 @@ contract('CharityProject', function (accounts) {
     describe('if closing time is zero', function () {
       it('success', async function () {
         await CharityProject.new(
+          this.feeInMillis,
           this.maxGoal,
           this.openingTime,
           0,
@@ -194,6 +200,7 @@ contract('CharityProject', function (accounts) {
     describe('if both opening and closing time are zero', function () {
       it('success', async function () {
         await CharityProject.new(
+          this.feeInMillis,
           this.maxGoal,
           0,
           0,
@@ -210,6 +217,7 @@ contract('CharityProject', function (accounts) {
       it('reverts', async function () {
         await shouldFail.reverting(
           CharityProject.new(
+            this.feeInMillis,
             this.maxGoal,
             this.openingTime,
             (this.openingTime - time.duration.seconds(1)),
@@ -227,6 +235,7 @@ contract('CharityProject', function (accounts) {
       it('reverts', async function () {
         await shouldFail.reverting(
           CharityProject.new(
+            this.feeInMillis,
             this.maxGoal,
             this.openingTime,
             this.closingTime,
@@ -244,6 +253,7 @@ contract('CharityProject', function (accounts) {
       it('reverts', async function () {
         await shouldFail.reverting(
           CharityProject.new(
+            this.feeInMillis,
             this.maxGoal,
             this.openingTime,
             this.closingTime,
@@ -259,6 +269,11 @@ contract('CharityProject', function (accounts) {
   });
 
   describe('check all properties', function () {
+    it('has a feeInMillis', async function () {
+      const feeInMillis = await this.mock.feeInMillis();
+      feeInMillis.should.be.bignumber.equal(this.feeInMillis);
+    });
+
     it('has a maxGoal', async function () {
       const maxGoal = await this.mock.maxGoal();
       maxGoal.should.be.bignumber.equal(this.maxGoal);
@@ -401,6 +416,7 @@ contract('CharityProject', function (accounts) {
       describe('if opening time is equal to zero', function () {
         beforeEach(async function () {
           this.mock = await CharityProject.new(
+            this.feeInMillis,
             this.maxGoal,
             0,
             this.closingTime,
@@ -440,6 +456,7 @@ contract('CharityProject', function (accounts) {
       describe('if closing time is equal to zero', function () {
         beforeEach(async function () {
           this.mock = await CharityProject.new(
+            this.feeInMillis,
             this.maxGoal,
             this.openingTime,
             0,
@@ -654,6 +671,7 @@ contract('CharityProject', function (accounts) {
         describe('withdraw before end', function () {
           it('reverts', async function () {
             this.mock = await CharityProject.new(
+              this.feeInMillis,
               this.maxGoal,
               this.openingTime,
               this.closingTime,
@@ -675,6 +693,7 @@ contract('CharityProject', function (accounts) {
         describe('withdraw after end', function () {
           it('success', async function () {
             this.mock = await CharityProject.new(
+              this.feeInMillis,
               this.maxGoal,
               this.openingTime,
               this.closingTime,
@@ -696,6 +715,7 @@ contract('CharityProject', function (accounts) {
         describe('withdraw before end with closing time equal to 0', function () {
           it('success', async function () {
             this.mock = await CharityProject.new(
+              this.feeInMillis,
               this.maxGoal,
               this.openingTime,
               0,
