@@ -11,16 +11,16 @@
     "truffle",
     "openzeppelin"
   ],
-  "main": "truffle-config.js",
-  "directories": {
-    "test": "test"
-  },
+  "files": [
+    "contracts",
+    "test"
+  ],
   "scripts": {
     "test": "scripts/test.sh",
     "lint:js": "eslint .",
     "lint:js:fix": "eslint . --fix",
-    "lint:sol": "solium -d .",
-    "lint:sol:fix": "solium -d . --fix",
+    "lint:sol": "solium -d contracts",
+    "lint:sol:fix": "solium -d contracts --fix",
     "lint": "npm run lint:js && npm run lint:sol",
     "lint:fix": "npm run lint:js:fix && npm run lint:sol:fix",
     "docs:dev": "vuepress dev docs",

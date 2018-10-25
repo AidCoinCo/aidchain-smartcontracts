@@ -80,7 +80,7 @@ contract('OnlusCertification', function (accounts) {
       const onlusId = 2;
       await this.mock.addWalletCertification(onlusWallet, onlusId, { from: owner });
 
-      const certificationId = await this.mock.walletMapping(onlusWallet);
+      const certificationId = await this.mock.isWalletOf(onlusWallet);
       certificationId.should.be.bignumber.equal(onlusId);
     });
 
@@ -88,12 +88,12 @@ contract('OnlusCertification', function (accounts) {
       const onlusId = 2;
       await this.mock.addWalletCertification(onlusWallet, onlusId, { from: owner });
 
-      const preCertificationId = await this.mock.walletMapping(onlusWallet);
+      const preCertificationId = await this.mock.isWalletOf(onlusWallet);
       preCertificationId.should.be.bignumber.equal(onlusId);
 
       await this.mock.removeWalletCertification(onlusWallet, { from: owner });
 
-      const postCertificationId = await this.mock.walletMapping(onlusWallet);
+      const postCertificationId = await this.mock.isWalletOf(onlusWallet);
       postCertificationId.should.be.bignumber.equal(0);
     });
 

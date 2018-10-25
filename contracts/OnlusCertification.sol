@@ -4,26 +4,31 @@ import "./access/RBACManager.sol";
 
 
 contract OnlusCertification is RBACManager {
-  mapping (address => uint256) public walletMapping;
+
+  mapping (address => uint256) private walletMapping;
+
+  function isWalletOf(address wallet) public view returns (uint256) {
+    return walletMapping[wallet];
+  }
 
   function addWalletCertification(
-    address _wallet,
-    uint256 _id
+    address wallet,
+    uint256 id
   )
   public
   onlyOwnerOrManager
   {
-    require(_id > 0, "_id must be greater than zero");
-    walletMapping[_wallet] = _id;
+    require(id > 0, "id must be greater than zero");
+    walletMapping[wallet] = id;
   }
 
   function removeWalletCertification(
-    address _wallet
+    address wallet
   )
   public
   onlyOwnerOrManager
   {
-    require(walletMapping[_wallet] != 0, "mapping for _wallet should exist");
-    walletMapping[_wallet] = 0;
+    require(walletMapping[wallet] != 0, "mapping for wallet should exist");
+    walletMapping[wallet] = 0;
   }
 }
