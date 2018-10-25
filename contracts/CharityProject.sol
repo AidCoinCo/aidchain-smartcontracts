@@ -18,7 +18,8 @@ contract CharityProject is RBACManager {
   }
 
   uint256 private _feeInMillis;
-  uint256 private _withdrawn;
+  uint256 private _withdrawnTokens;
+  uint256 private _withdrawnFees;
   uint256 private _maxGoal;
   uint256 private _openingTime;
   uint256 private _closingTime;
@@ -69,8 +70,12 @@ contract CharityProject is RBACManager {
     return _feeInMillis;
   }
 
-  function withdrawn() public view returns(uint256) {
-    return _withdrawn;
+  function withdrawnTokens() public view returns(uint256) {
+    return _withdrawnTokens;
+  }
+
+  function withdrawnFees() public view returns(uint256) {
+    return _withdrawnFees;
   }
 
   function maxGoal() public view returns(uint256) {
@@ -136,7 +141,7 @@ contract CharityProject is RBACManager {
 
   function totalRaised() public view returns (uint256) {
     uint256 raised = _token.balanceOf(this);
-    return raised.add(_withdrawn);
+    return raised.add(_withdrawnTokens);
   }
 
   function hasStarted() public view returns (bool) {
@@ -166,7 +171,19 @@ contract CharityProject is RBACManager {
   canWithdraw
   {
     _token.safeTransfer(to, value);
-    _withdrawn = _withdrawn.add(value);
+    _withdrawnTokens = _withdrawnTokens.add(value);
+  }
+
+  function withdrawFees(
+    address to,
+    uint256 value
+  )
+  public
+  onlyOwner
+  canWithdraw
+  {
+    _token.safeTransfer(to, value);
+    _withdrawnFees = _withdrawnFees.add(value);
   }
 
   function recoverERC20(
