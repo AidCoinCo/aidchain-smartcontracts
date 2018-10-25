@@ -40,3 +40,6 @@ build/
 
 # npm package
 package-lock.json
+
+# vuepress dist directory
+docs/.vuepress/dist/

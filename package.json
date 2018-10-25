@@ -23,6 +23,9 @@
     "lint:sol:fix": "solium -d . --fix",
     "lint": "npm run lint:js && npm run lint:sol",
     "lint:fix": "npm run lint:js:fix && npm run lint:sol:fix",
+    "docs:dev": "vuepress dev docs",
+    "docs:build": "vuepress build docs",
+    "docs:deploy": "vuepress build docs && sh docs/deploy/deploy.sh",
     "console": "truffle console",
     "coverage": "scripts/coverage.sh",
     "version": "scripts/version.js"
@@ -73,6 +76,7 @@
     "truffle-contract": "^3.0.6",
     "truffle-hdwallet-provider": "^0.0.6",
     "truffle-wallet-provider": "^0.0.5",
+    "vuepress": "^0.14.4",
     "web3": "^0.20.6",
     "web3-eth-abi": "^1.0.0-beta.36",
     "web3-utils": "^1.0.0-beta.36"
