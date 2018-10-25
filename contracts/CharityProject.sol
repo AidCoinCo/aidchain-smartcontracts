@@ -47,12 +47,12 @@ contract CharityProject is RBACManager {
     token = _token;
     canWithdrawBeforeEnd = _canWithdrawBeforeEnd;
 
-    if (wallet != owner) {
+    if (wallet != owner()) {
       addManager(wallet);
     }
 
     // solium-disable-next-line max-len
-    if (_additionalManager != address(0) && _additionalManager != owner && _additionalManager != wallet) {
+    if (_additionalManager != address(0) && _additionalManager != owner() && _additionalManager != wallet) {
       addManager(_additionalManager);
     }
   }
@@ -120,7 +120,7 @@ contract CharityProject is RBACManager {
   function recoverERC20(
     address _tokenAddress,
     address _receiverAddress,
-    uint256 _tokens
+    uint256 _amount
   )
   public
   onlyOwnerOrManager
@@ -130,6 +130,6 @@ contract CharityProject is RBACManager {
       _tokenAddress != address(token),
       "to transfer project's funds use withdrawTokens"
     );
-    return ERC20Basic(_tokenAddress).transfer(_receiverAddress, _tokens);
+    return ERC20(_tokenAddress).transfer(_receiverAddress, _amount);
   }
 }

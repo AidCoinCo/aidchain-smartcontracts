@@ -1,29 +1,40 @@
 pragma solidity ^0.4.24;
 
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
-import "openzeppelin-solidity/contracts/access/rbac/RBAC.sol";
+import "openzeppelin-solidity/contracts/access/Roles.sol";
 
 
-contract RBACManager is RBAC, Ownable {
-  string constant ROLE_MANAGER = "manager";
+contract RBACManager is Ownable {
+  using Roles for Roles.Role;
+
+  event ManagerAdded(address indexed account);
+  event ManagerRemoved(address indexed account);
+
+  Roles.Role private managers;
 
   modifier onlyOwnerOrManager() {
     require(
-      msg.sender == owner || hasRole(msg.sender, ROLE_MANAGER),
+      msg.sender == owner() || isManager(msg.sender),
       "unauthorized"
     );
     _;
   }
 
   constructor() public {
-    addRole(msg.sender, ROLE_MANAGER);
+    addManager(msg.sender);
   }
 
-  function addManager(address _manager) public onlyOwner {
-    addRole(_manager, ROLE_MANAGER);
+  function isManager(address account) public view returns (bool) {
+    return managers.has(account);
   }
 
-  function removeManager(address _manager) public onlyOwner {
-    removeRole(_manager, ROLE_MANAGER);
+  function addManager(address account) public onlyOwner {
+    managers.add(account);
+    emit ManagerAdded(account);
+  }
+
+  function removeManager(address account) public onlyOwner {
+    managers.remove(account);
+    emit ManagerRemoved(account);
   }
 }

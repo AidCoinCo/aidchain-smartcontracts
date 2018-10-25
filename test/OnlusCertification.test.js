@@ -1,4 +1,4 @@
-const { assertRevert } = require('./helpers/assertRevert');
+const shouldFail = require('openzeppelin-solidity/test/helpers/shouldFail');
 
 const { shouldBehaveLikeRBACManager } = require('./behaviours/RBACManager.behaviour');
 
@@ -7,7 +7,6 @@ const BigNumber = web3.BigNumber;
 const OnlusCertification = artifacts.require('OnlusCertification');
 
 require('chai')
-  .use(require('chai-as-promised'))
   .use(require('chai-bignumber')(BigNumber))
   .should();
 
@@ -16,50 +15,61 @@ contract('OnlusCertification', function (accounts) {
     owner,
     anyone,
     onlusWallet,
+    futureManager,
     ...managers
   ] = accounts;
 
-  before(async function () {
+  beforeEach(async function () {
     this.mock = await OnlusCertification.new({ from: owner });
   });
 
   context('like a RBACManager', function () {
-    shouldBehaveLikeRBACManager(accounts);
+    shouldBehaveLikeRBACManager([
+      owner,
+      anyone,
+      futureManager,
+      ...managers,
+    ]);
   });
 
   describe('onlus certification', function () {
+    beforeEach(async function () {
+      for (let i = 0; i < 3; i++) {
+        await this.mock.addManager(managers[i], { from: owner });
+      }
+    });
+
     it('allows owner to add a wallet certification', async function () {
       const onlusId = 1;
-      await this.mock.addWalletCertification(onlusWallet, onlusId, { from: owner }).should.be.fulfilled;
+      await this.mock.addWalletCertification(onlusWallet, onlusId, { from: owner });
     });
 
     it('allows owner to remove a wallet certification', async function () {
       const onlusId = 1;
-      await this.mock.addWalletCertification(onlusWallet, onlusId, { from: owner }).should.be.fulfilled;
-      await this.mock.removeWalletCertification(onlusWallet, { from: owner }).should.be.fulfilled;
+      await this.mock.addWalletCertification(onlusWallet, onlusId, { from: owner });
+      await this.mock.removeWalletCertification(onlusWallet, { from: owner });
     });
 
     it('allows manager to add a wallet certification', async function () {
       const onlusId = 1;
-      await this.mock.addManager(managers[0], { from: owner }).should.be.fulfilled;
-      await this.mock.addWalletCertification(onlusWallet, onlusId, { from: managers[0] }).should.be.fulfilled;
+      await this.mock.addWalletCertification(onlusWallet, onlusId, { from: managers[0] });
     });
 
     it('allows managers to remove a wallet certification', async function () {
       const onlusId = 1;
-      await this.mock.addWalletCertification(onlusWallet, onlusId, { from: managers[0] }).should.be.fulfilled;
-      await this.mock.removeWalletCertification(onlusWallet, { from: managers[0] }).should.be.fulfilled;
+      await this.mock.addWalletCertification(onlusWallet, onlusId, { from: managers[0] });
+      await this.mock.removeWalletCertification(onlusWallet, { from: managers[0] });
     });
 
     it('does not allow "anyone" to add a wallet certification', async function () {
       const onlusId = 1;
-      await assertRevert(
+      await shouldFail.reverting(
         this.mock.addWalletCertification(onlusWallet, onlusId, { from: anyone })
       );
     });
 
     it('does not allow "anyone" to remove a wallet certification', async function () {
-      await assertRevert(
+      await shouldFail.reverting(
         this.mock.removeWalletCertification(onlusWallet, { from: anyone })
       );
     });
@@ -88,13 +98,13 @@ contract('OnlusCertification', function (accounts) {
     });
 
     it('should fail to add certification if invalid id', async function () {
-      await assertRevert(
+      await shouldFail.reverting(
         this.mock.addWalletCertification(onlusWallet, 0, { from: owner })
       );
     });
 
     it('should fail to remove certification if not present', async function () {
-      await assertRevert(
+      await shouldFail.reverting(
         this.mock.removeWalletCertification(onlusWallet, { from: owner })
       );
     });

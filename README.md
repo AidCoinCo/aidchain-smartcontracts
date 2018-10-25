@@ -5,7 +5,6 @@
  
 Website: [www.aidchain.co](https://www.aidchain.co)
 
- 
 ## Installation
 
 
@@ -15,19 +14,13 @@ Install truffle.
 npm install -g truffle      // Version 4.1.14+ required.
 ```
 
-
-
 ## Install dependencies
-
 
 ```bash
 npm install
 ```
 
-
-
 ## Linter
-
 
 Use Solium
 
@@ -47,11 +40,8 @@ Use both and fix
 npm run lint:fix
 ```
 
-
-
 ## Compile and test the contracts.
  
-
 Open the Truffle console
 
 ```bash
@@ -70,10 +60,7 @@ Test
 test
 ```
 
-
-
 ## Optional
-
 
 Install the [truffle-flattener](https://github.com/alcuadrado/truffle-flattener)
 
@@ -81,19 +68,12 @@ Install the [truffle-flattener](https://github.com/alcuadrado/truffle-flattener)
 npm install -g truffle-flattener
 ```
  
- 
 Usage 
 
 ```bash
 truffle-flattener contracts/CharityProject.sol >> dist/CharityProject.dist.sol
 ```
 
+## License
 
-
-#### Note
-
-IMPORTANT: Before commit run the lint and fix command:
-
-```bash
-npm run lint:fix
-```
+Code released under the [MIT License](https://github.com/AidCoinCo/aidchain-smartcontracts/blob/master/LICENSE).

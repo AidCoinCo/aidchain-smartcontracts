@@ -1,13 +1,12 @@
-const { assertRevert } = require('../helpers/assertRevert');
-const expectEvent = require('../helpers/expectEvent');
+const shouldFail = require('openzeppelin-solidity/test/helpers/shouldFail');
+const expectEvent = require('openzeppelin-solidity/test/helpers/expectEvent');
+const { ZERO_ADDRESS } = require('openzeppelin-solidity/test/helpers/constants');
 
-require('chai')
-  .use(require('chai-as-promised'))
-  .should();
+require('chai').should();
 
 function shouldBehaveLikeRBACManager (accounts) {
   const [
-    owner,
+    authorized,
     anyone,
     futureManager,
     ...managers
@@ -15,55 +14,70 @@ function shouldBehaveLikeRBACManager (accounts) {
 
   beforeEach(async function () {
     for (let i = 0; i < 3; i++) {
-      await this.mock.addManager(managers[i], { from: owner }).should.be.fulfilled;
+      await this.mock.addManager(managers[i], { from: authorized });
     }
   });
 
   describe('in normal conditions', function () {
-    it('allows owner to add a manager', async function () {
-      await this.mock.addManager(managers[3], { from: owner }).should.be.fulfilled;
+    it('allows authorized to add a manager', async function () {
+      await this.mock.addManager(futureManager, { from: authorized });
     });
 
-    it('allows owner to remove a manager', async function () {
-      await this.mock.removeManager(managers[2], { from: owner }).should.be.fulfilled;
+    it('allows authorized to remove a manager', async function () {
+      await this.mock.addManager(futureManager, { from: authorized });
+      await this.mock.removeManager(futureManager, { from: authorized });
     });
 
-    it('announces a RoleAdded event on addRole', async function () {
-      await expectEvent.inTransaction(
-        this.mock.addManager(futureManager, { from: owner }),
-        'RoleAdded'
-      );
+    it('emits a ManagerAdded event on addManager', async function () {
+      const { logs } = await this.mock.addManager(futureManager, { from: authorized });
+      expectEvent.inLogs(logs, 'ManagerAdded', { account: futureManager });
     });
 
-    it('announces a RoleRemoved event on removeRole', async function () {
-      await expectEvent.inTransaction(
-        this.mock.removeManager(futureManager, { from: owner }),
-        'RoleRemoved'
-      );
+    it('emits a ManagerRemoved event on removeManager', async function () {
+      await this.mock.addManager(futureManager, { from: authorized });
+      const { logs } = await this.mock.removeManager(futureManager, { from: authorized });
+      expectEvent.inLogs(logs, 'ManagerRemoved', { account: futureManager });
     });
   });
 
   describe('in adversarial conditions', function () {
+    it('reverts when adding role to an already assigned account', async function () {
+      await this.mock.addManager(futureManager, { from: authorized });
+      await shouldFail.reverting(this.mock.addManager(futureManager, { from: authorized }));
+    });
+
+    it('reverts when adding role to the null account', async function () {
+      await shouldFail.reverting(this.mock.addManager(ZERO_ADDRESS, { from: authorized }));
+    });
+
+    it('reverts when removing from an unassigned account', async function () {
+      await shouldFail.reverting(this.mock.removeManager(anyone, { from: authorized }));
+    });
+
+    it('reverts when removing role from the null account', async function () {
+      await shouldFail.reverting(this.mock.removeManager(ZERO_ADDRESS, { from: authorized }));
+    });
+
     it('does not allow a manager to add another manager', async function () {
-      await assertRevert(
+      await shouldFail.reverting(
         this.mock.addManager(futureManager, { from: managers[0] })
       );
     });
 
     it('does not allow "anyone" to add a manager', async function () {
-      await assertRevert(
+      await shouldFail.reverting(
         this.mock.addManager(futureManager, { from: anyone })
       );
     });
 
     it('does not allow a manager to remove another manager', async function () {
-      await assertRevert(
+      await shouldFail.reverting(
         this.mock.removeManager(managers[1], { from: managers[0] })
       );
     });
 
     it('does not allow "anyone" to remove a manager', async function () {
-      await assertRevert(
+      await shouldFail.reverting(
         this.mock.removeManager(managers[1], { from: anyone })
       );
     });

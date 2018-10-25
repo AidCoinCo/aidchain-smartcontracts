@@ -1,8 +1,7 @@
-const { advanceBlock } = require('./helpers/advanceToBlock');
-const { duration, increaseTimeTo } = require('./helpers/increaseTime');
-const { latestTime } = require('./helpers/latestTime');
-const { ether } = require('./helpers/ether');
-const { assertRevert } = require('./helpers/assertRevert');
+const { advanceBlock } = require('openzeppelin-solidity/test/helpers/advanceToBlock');
+const time = require('openzeppelin-solidity/test/helpers/time');
+const { ether } = require('openzeppelin-solidity/test/helpers/ether');
+const shouldFail = require('openzeppelin-solidity/test/helpers/shouldFail');
 
 const { shouldBehaveLikeRBACManager } = require('./behaviours/RBACManager.behaviour');
 
@@ -10,12 +9,11 @@ const BigNumber = web3.BigNumber;
 
 const CharityProject = artifacts.require('CharityProject');
 const AidCoinMock = artifacts.require('AidCoinMock');
-const BasicTokenMock = artifacts.require('BasicTokenMock');
+const ERC20Mock = artifacts.require('ERC20Mock');
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 require('chai')
-  .use(require('chai-as-promised'))
   .use(require('chai-bignumber')(BigNumber))
   .should();
 
@@ -26,6 +24,8 @@ contract('CharityProject', function (accounts) {
     additionalManager,
     onlusWallet,
     userWallet,
+    futureManager,
+    ...managers
   ] = accounts;
 
   before(async function () {
@@ -35,10 +35,10 @@ contract('CharityProject', function (accounts) {
 
   beforeEach(async function () {
     this.maxGoal = new BigNumber(1000);
-    this.openingTime = (await latestTime()) + duration.weeks(1);
-    this.closingTime = this.openingTime + duration.weeks(1);
-    this.afterOpeningTime = this.openingTime + duration.seconds(1);
-    this.afterClosingTime = this.closingTime + duration.seconds(1);
+    this.openingTime = (await time.latest()) + time.duration.weeks(1);
+    this.closingTime = this.openingTime + time.duration.weeks(1);
+    this.afterOpeningTime = this.openingTime + time.duration.seconds(1);
+    this.afterClosingTime = this.closingTime + time.duration.seconds(1);
     this.canWithdrawBeforeEnd = true;
 
     this.token = await AidCoinMock.new();
@@ -57,7 +57,12 @@ contract('CharityProject', function (accounts) {
   });
 
   context('like a RBACManager', function () {
-    shouldBehaveLikeRBACManager(accounts);
+    shouldBehaveLikeRBACManager([
+      owner,
+      anyone,
+      futureManager,
+      ...managers,
+    ]);
   });
 
   context('creating a valid project', function () {
@@ -67,13 +72,19 @@ contract('CharityProject', function (accounts) {
         contractOwner.should.be.equal(owner);
       });
 
+      it('owner should have the manager role', async function () {
+        const contractOwner = await this.mock.owner();
+        const hasManagerRole = await this.mock.isManager(contractOwner);
+        hasManagerRole.should.be.equal(true);
+      });
+
       it('charity wallet should have the manager role', async function () {
-        const hasManagerRole = await this.mock.hasRole(onlusWallet, 'manager');
+        const hasManagerRole = await this.mock.isManager(onlusWallet);
         hasManagerRole.should.be.equal(true);
       });
 
       it('additional manager should have the manager role', async function () {
-        const hasManagerRole = await this.mock.hasRole(additionalManager, 'manager');
+        const hasManagerRole = await this.mock.isManager(additionalManager);
         hasManagerRole.should.be.equal(true);
       });
     });
@@ -97,13 +108,19 @@ contract('CharityProject', function (accounts) {
         contractOwner.should.be.equal(onlusWallet);
       });
 
+      it('owner should have the manager role', async function () {
+        const contractOwner = await this.mock.owner();
+        const hasManagerRole = await this.mock.isManager(contractOwner);
+        hasManagerRole.should.be.equal(true);
+      });
+
       it('charity wallet should have the manager role', async function () {
-        const hasManagerRole = await this.mock.hasRole(onlusWallet, 'manager');
+        const hasManagerRole = await this.mock.isManager(onlusWallet);
         hasManagerRole.should.be.equal(true);
       });
 
       it('additional manager should have the manager role', async function () {
-        const hasManagerRole = await this.mock.hasRole(additionalManager, 'manager');
+        const hasManagerRole = await this.mock.isManager(additionalManager);
         hasManagerRole.should.be.equal(true);
       });
     });
@@ -127,13 +144,19 @@ contract('CharityProject', function (accounts) {
         contractOwner.should.be.equal(additionalManager);
       });
 
+      it('owner should have the manager role', async function () {
+        const contractOwner = await this.mock.owner();
+        const hasManagerRole = await this.mock.isManager(contractOwner);
+        hasManagerRole.should.be.equal(true);
+      });
+
       it('charity wallet should have the manager role', async function () {
-        const hasManagerRole = await this.mock.hasRole(onlusWallet, 'manager');
+        const hasManagerRole = await this.mock.isManager(onlusWallet);
         hasManagerRole.should.be.equal(true);
       });
 
       it('additional manager should have the manager role', async function () {
-        const hasManagerRole = await this.mock.hasRole(additionalManager, 'manager');
+        const hasManagerRole = await this.mock.isManager(additionalManager);
         hasManagerRole.should.be.equal(true);
       });
     });
@@ -149,7 +172,7 @@ contract('CharityProject', function (accounts) {
           this.canWithdrawBeforeEnd,
           additionalManager,
           { from: owner }
-        ).should.be.fulfilled;
+        );
       });
     });
 
@@ -164,7 +187,7 @@ contract('CharityProject', function (accounts) {
           this.canWithdrawBeforeEnd,
           additionalManager,
           { from: owner }
-        ).should.be.fulfilled;
+        );
       });
     });
 
@@ -179,17 +202,17 @@ contract('CharityProject', function (accounts) {
           this.canWithdrawBeforeEnd,
           additionalManager,
           { from: owner }
-        ).should.be.fulfilled;
+        );
       });
     });
 
     describe('if closing time is before opening time', function () {
       it('reverts', async function () {
-        await assertRevert(
+        await shouldFail.reverting(
           CharityProject.new(
             this.maxGoal,
             this.openingTime,
-            (this.openingTime - duration.seconds(1)),
+            (this.openingTime - time.duration.seconds(1)),
             onlusWallet,
             this.token.address,
             this.canWithdrawBeforeEnd,
@@ -202,7 +225,7 @@ contract('CharityProject', function (accounts) {
 
     describe('if empty wallet', function () {
       it('reverts', async function () {
-        await assertRevert(
+        await shouldFail.reverting(
           CharityProject.new(
             this.maxGoal,
             this.openingTime,
@@ -219,7 +242,7 @@ contract('CharityProject', function (accounts) {
 
     describe('if empty token', function () {
       it('reverts', async function () {
-        await assertRevert(
+        await shouldFail.reverting(
           CharityProject.new(
             this.maxGoal,
             this.openingTime,
@@ -281,7 +304,7 @@ contract('CharityProject', function (accounts) {
       describe('if anyone is calling', function () {
         it('reverts', async function () {
           const newMaxGoal = new BigNumber(2000);
-          await assertRevert(
+          await shouldFail.reverting(
             this.mock.setMaxGoal(newMaxGoal, { from: onlusWallet })
           );
         });
@@ -291,8 +314,8 @@ contract('CharityProject', function (accounts) {
     describe('changing times', function () {
       describe('if owner is calling', function () {
         it('has the new times', async function () {
-          const newOpeningTime = (await latestTime()) + duration.weeks(1);
-          const newClosingTime = newOpeningTime + duration.weeks(1);
+          const newOpeningTime = (await time.latest()) + time.duration.weeks(1);
+          const newClosingTime = newOpeningTime + time.duration.weeks(1);
 
           await this.mock.setTimes(newOpeningTime, newClosingTime, { from: owner });
 
@@ -304,19 +327,19 @@ contract('CharityProject', function (accounts) {
 
         describe('if closing time is zero', function () {
           it('success', async function () {
-            const newOpeningTime = (await latestTime()) + duration.weeks(1);
+            const newOpeningTime = (await time.latest()) + time.duration.weeks(1);
             const newClosingTime = 0;
             await this.mock.setTimes(newOpeningTime, newClosingTime, { from: owner })
-              .should.be.fulfilled;
+            ;
           });
         });
 
         describe('if opening time is zero', function () {
           it('success', async function () {
             const newOpeningTime = 0;
-            const newClosingTime = (await latestTime()) + duration.weeks(1);
+            const newClosingTime = (await time.latest()) + time.duration.weeks(1);
             await this.mock.setTimes(newOpeningTime, newClosingTime, { from: owner })
-              .should.be.fulfilled;
+            ;
           });
         });
 
@@ -325,15 +348,15 @@ contract('CharityProject', function (accounts) {
             const newOpeningTime = 0;
             const newClosingTime = 0;
             await this.mock.setTimes(newOpeningTime, newClosingTime, { from: owner })
-              .should.be.fulfilled;
+            ;
           });
         });
 
         describe('if closing time is before opening time', function () {
           it('reverts', async function () {
-            const newOpeningTime = (await latestTime()) + duration.weeks(1);
-            const newClosingTime = newOpeningTime - duration.seconds(1);
-            await assertRevert(
+            const newOpeningTime = (await time.latest()) + time.duration.weeks(1);
+            const newClosingTime = newOpeningTime - time.duration.seconds(1);
+            await shouldFail.reverting(
               this.mock.setTimes(newOpeningTime, newClosingTime, { from: owner })
             );
           });
@@ -342,9 +365,9 @@ contract('CharityProject', function (accounts) {
 
       describe('if anyone is calling', function () {
         it('reverts', async function () {
-          const newOpeningTime = (await latestTime()) + duration.weeks(1);
-          const newClosingTime = newOpeningTime + duration.weeks(1);
-          await assertRevert(
+          const newOpeningTime = (await time.latest()) + time.duration.weeks(1);
+          const newClosingTime = newOpeningTime + time.duration.weeks(1);
+          await shouldFail.reverting(
             this.mock.setTimes(newOpeningTime, newClosingTime, { from: onlusWallet })
           );
         });
@@ -365,7 +388,7 @@ contract('CharityProject', function (accounts) {
         it('reverts', async function () {
           const canWithdrawBeforeEnd = false;
           await this.mock.setCanWithdrawBeforeEnd(canWithdrawBeforeEnd, { from: owner });
-          await assertRevert(
+          await shouldFail.reverting(
             this.mock.setCanWithdrawBeforeEnd(canWithdrawBeforeEnd, { from: onlusWallet })
           );
         });
@@ -427,7 +450,7 @@ contract('CharityProject', function (accounts) {
             { from: owner }
           );
 
-          await increaseTimeTo(this.afterOpeningTime);
+          await time.increaseTo(this.afterOpeningTime);
         });
 
         it('hasStarted should be true', async function () {
@@ -443,7 +466,7 @@ contract('CharityProject', function (accounts) {
 
       describe('if closing time is grater than zero', function () {
         beforeEach(async function () {
-          await increaseTimeTo(this.afterOpeningTime);
+          await time.increaseTo(this.afterOpeningTime);
         });
 
         it('hasStarted should be true', async function () {
@@ -461,7 +484,7 @@ contract('CharityProject', function (accounts) {
     describe('if after closing time', function () {
       describe('if closing time is grater than zero', function () {
         beforeEach(async function () {
-          await increaseTimeTo(this.afterClosingTime);
+          await time.increaseTo(this.afterClosingTime);
         });
 
         it('hasStarted should be true', async function () {
@@ -503,7 +526,7 @@ contract('CharityProject', function (accounts) {
     describe('if is reached and then withdrawn', function () {
       it('maxGoalReached should be true', async function () {
         await this.token.transfer(this.mock.address, this.maxGoal.add(1), { from: userWallet });
-        await this.mock.withdrawTokens(onlusWallet, this.maxGoal.add(1), { from: owner }).should.be.fulfilled;
+        await this.mock.withdrawTokens(onlusWallet, this.maxGoal.add(1), { from: owner });
         const maxGoalReached = await this.mock.maxGoalReached();
         maxGoalReached.should.be.equal(true);
       });
@@ -512,7 +535,7 @@ contract('CharityProject', function (accounts) {
 
   describe('accepting payments', function () {
     it('should reject ETH payments', async function () {
-      await assertRevert(this.mock.send(ether(1), { from: anyone }));
+      await shouldFail.reverting(this.mock.send(ether(1), { from: anyone }));
     });
 
     it('should accept token payments', async function () {
@@ -525,7 +548,7 @@ contract('CharityProject', function (accounts) {
   });
 
   context('withdraw tokens', function () {
-    describe('in can withdraw before end', function () {
+    describe('if can withdraw before end', function () {
       const tokenAmount = new BigNumber(20000);
 
       beforeEach(async function () {
@@ -588,7 +611,7 @@ contract('CharityProject', function (accounts) {
           it('reverts', async function () {
             const withdrawAmount = new BigNumber(200);
 
-            await assertRevert(
+            await shouldFail.reverting(
               this.mock.withdrawTokens(ZERO_ADDRESS, withdrawAmount, { from: owner })
             );
           });
@@ -598,7 +621,7 @@ contract('CharityProject', function (accounts) {
           it('reverts', async function () {
             const withdrawAmount = tokenAmount.plus(1);
 
-            await assertRevert(
+            await shouldFail.reverting(
               this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: owner })
             );
           });
@@ -617,14 +640,14 @@ contract('CharityProject', function (accounts) {
         it('reverts', async function () {
           const withdrawAmount = new BigNumber(200);
 
-          await assertRevert(
+          await shouldFail.reverting(
             this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: anyone })
           );
         });
       });
     });
 
-    describe('in can\'t withdraw before end', function () {
+    describe('if can\'t withdraw before end', function () {
       const tokenAmount = new BigNumber(20000);
 
       context('if has permission', function () {
@@ -643,7 +666,7 @@ contract('CharityProject', function (accounts) {
             await this.token.transfer(this.mock.address, tokenAmount, { from: userWallet });
 
             const withdrawAmount = new BigNumber(200);
-            await assertRevert(
+            await shouldFail.reverting(
               this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: owner })
             );
           });
@@ -663,10 +686,10 @@ contract('CharityProject', function (accounts) {
             );
             await this.token.transfer(this.mock.address, tokenAmount, { from: userWallet });
 
-            await increaseTimeTo(this.afterClosingTime);
+            await time.increaseTo(this.afterClosingTime);
 
             const withdrawAmount = new BigNumber(200);
-            await this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: owner }).should.be.fulfilled;
+            await this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: owner });
           });
         });
 
@@ -685,7 +708,7 @@ contract('CharityProject', function (accounts) {
             await this.token.transfer(this.mock.address, tokenAmount, { from: userWallet });
 
             const withdrawAmount = new BigNumber(200);
-            await this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: owner }).should.be.fulfilled;
+            await this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: owner });
           });
         });
       });
@@ -728,7 +751,7 @@ contract('CharityProject', function (accounts) {
     const tokenAmount = new BigNumber(1000);
 
     beforeEach(async function () {
-      this.anotherERC20 = await BasicTokenMock.new(this.mock.address, tokenAmount, { from: owner });
+      this.anotherERC20 = await ERC20Mock.new(this.mock.address, tokenAmount, { from: owner });
     });
 
     describe('if owner is calling', function () {
@@ -749,7 +772,7 @@ contract('CharityProject', function (accounts) {
       describe('if trying to transfer project funds', function () {
         it('reverts', async function () {
           await this.token.mint(this.mock.address, tokenAmount);
-          await assertRevert(
+          await shouldFail.reverting(
             this.mock.recoverERC20(this.token.address, anyone, tokenAmount, { from: owner })
           );
         });
@@ -758,7 +781,7 @@ contract('CharityProject', function (accounts) {
 
     describe('if third party is calling', function () {
       it('reverts', async function () {
-        await assertRevert(
+        await shouldFail.reverting(
           this.mock.recoverERC20(this.anotherERC20.address, anyone, tokenAmount, { from: anyone })
         );
       });
