@@ -7,7 +7,6 @@ Website: [www.aidchain.co](https://www.aidchain.co)
 
 ## Installation
 
-
 Install truffle.
 
 ```bash
