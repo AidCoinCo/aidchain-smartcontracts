@@ -3,7 +3,6 @@ pragma solidity ^0.4.24;
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/access/Roles.sol";
 
-
 contract RBACManager is Ownable {
   using Roles for Roles.Role;
 

@@ -5,7 +5,6 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
 import "./access/RBACManager.sol";
 
-
 contract CharityProject is RBACManager {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
@@ -174,8 +173,13 @@ contract CharityProject is RBACManager {
   onlyOwnerOrManager
   canWithdraw
   {
+    uint256 expectedTotalWithdraw = _withdrawnTokens.add(value);
+    require(
+      expectedTotalWithdraw <= totalRaised().sub(totalFee()),
+      "can't withdraw more than available token"
+    );
+    _withdrawnTokens = expectedTotalWithdraw;
     _token.safeTransfer(to, value);
-    _withdrawnTokens = _withdrawnTokens.add(value);
   }
 
   function withdrawFees(
@@ -186,8 +190,13 @@ contract CharityProject is RBACManager {
   onlyOwner
   canWithdraw
   {
+    uint256 expectedTotalWithdraw = _withdrawnFees.add(value);
+    require(
+      expectedTotalWithdraw <= totalFee(),
+      "can't withdraw more than available fee"
+    );
+    _withdrawnFees = expectedTotalWithdraw;
     _token.safeTransfer(to, value);
-    _withdrawnFees = _withdrawnFees.add(value);
   }
 
   function recoverERC20(

@@ -2,7 +2,6 @@ pragma solidity ^0.4.24;
 
 import "./access/RBACManager.sol";
 
-
 contract OnlusCertification is RBACManager {
 
   mapping (address => uint256) private walletMapping;

@@ -2,6 +2,7 @@ const { advanceBlock } = require('openzeppelin-solidity/test/helpers/advanceToBl
 const time = require('openzeppelin-solidity/test/helpers/time');
 const { ether } = require('openzeppelin-solidity/test/helpers/ether');
 const shouldFail = require('openzeppelin-solidity/test/helpers/shouldFail');
+const { ZERO_ADDRESS } = require('openzeppelin-solidity/test/helpers/constants');
 
 const { shouldBehaveLikeRBACManager } = require('./behaviours/RBACManager.behaviour');
 
@@ -10,8 +11,6 @@ const BigNumber = web3.BigNumber;
 const CharityProject = artifacts.require('CharityProject');
 const AidCoinMock = artifacts.require('AidCoinMock');
 const ERC20Mock = artifacts.require('ERC20Mock');
-
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 require('chai')
   .use(require('chai-bignumber')(BigNumber))
@@ -28,13 +27,18 @@ contract('CharityProject', function (accounts) {
     ...managers
   ] = accounts;
 
+  const totalAmount = new BigNumber(10000);
+  const tokenAmount = new BigNumber(1000);
+  const feeInMillis = new BigNumber(200); // 200/1000 == 20%
+  const expectedMaxFee = tokenAmount.mul(feeInMillis).div(1000);
+  const expectedMaxTokens = tokenAmount.sub(expectedMaxFee);
+
   before(async function () {
     // Advance to the next block to correctly read time in the solidity "now" function interpreted by ganache
     await advanceBlock();
   });
 
   beforeEach(async function () {
-    this.feeInMillis = new BigNumber(200); // 200/1000 == 20%
     this.maxGoal = new BigNumber(1000);
     this.openingTime = (await time.latest()) + time.duration.weeks(1);
     this.closingTime = this.openingTime + time.duration.weeks(1);
@@ -43,10 +47,10 @@ contract('CharityProject', function (accounts) {
     this.canWithdrawBeforeEnd = true;
 
     this.token = await AidCoinMock.new();
-    await this.token.mint(userWallet, new BigNumber(100000));
+    await this.token.mint(userWallet, totalAmount);
 
     this.mock = await CharityProject.new(
-      this.feeInMillis,
+      feeInMillis,
       this.maxGoal,
       this.openingTime,
       this.closingTime,
@@ -94,7 +98,7 @@ contract('CharityProject', function (accounts) {
     describe('owner and wallet are the same and additional manager is different', function () {
       beforeEach(async function () {
         this.mock = await CharityProject.new(
-          this.feeInMillis,
+          feeInMillis,
           this.maxGoal,
           this.openingTime,
           this.closingTime,
@@ -131,7 +135,7 @@ contract('CharityProject', function (accounts) {
     describe('wallet is different and owner and additional manager are the same', function () {
       beforeEach(async function () {
         this.mock = await CharityProject.new(
-          this.feeInMillis,
+          feeInMillis,
           this.maxGoal,
           this.openingTime,
           this.closingTime,
@@ -168,7 +172,7 @@ contract('CharityProject', function (accounts) {
     describe('if opening time is zero', function () {
       it('success', async function () {
         await CharityProject.new(
-          this.feeInMillis,
+          feeInMillis,
           this.maxGoal,
           0,
           this.closingTime,
@@ -184,7 +188,7 @@ contract('CharityProject', function (accounts) {
     describe('if closing time is zero', function () {
       it('success', async function () {
         await CharityProject.new(
-          this.feeInMillis,
+          feeInMillis,
           this.maxGoal,
           this.openingTime,
           0,
@@ -200,7 +204,7 @@ contract('CharityProject', function (accounts) {
     describe('if both opening and closing time are zero', function () {
       it('success', async function () {
         await CharityProject.new(
-          this.feeInMillis,
+          feeInMillis,
           this.maxGoal,
           0,
           0,
@@ -217,7 +221,7 @@ contract('CharityProject', function (accounts) {
       it('reverts', async function () {
         await shouldFail.reverting(
           CharityProject.new(
-            this.feeInMillis,
+            feeInMillis,
             this.maxGoal,
             this.openingTime,
             (this.openingTime - time.duration.seconds(1)),
@@ -235,7 +239,7 @@ contract('CharityProject', function (accounts) {
       it('reverts', async function () {
         await shouldFail.reverting(
           CharityProject.new(
-            this.feeInMillis,
+            feeInMillis,
             this.maxGoal,
             this.openingTime,
             this.closingTime,
@@ -253,7 +257,7 @@ contract('CharityProject', function (accounts) {
       it('reverts', async function () {
         await shouldFail.reverting(
           CharityProject.new(
-            this.feeInMillis,
+            feeInMillis,
             this.maxGoal,
             this.openingTime,
             this.closingTime,
@@ -271,7 +275,7 @@ contract('CharityProject', function (accounts) {
   describe('check all properties', function () {
     it('has a feeInMillis', async function () {
       const feeInMillis = await this.mock.feeInMillis();
-      feeInMillis.should.be.bignumber.equal(this.feeInMillis);
+      feeInMillis.should.be.bignumber.equal(feeInMillis);
     });
 
     it('has a maxGoal', async function () {
@@ -416,7 +420,7 @@ contract('CharityProject', function (accounts) {
       describe('if opening time is equal to zero', function () {
         beforeEach(async function () {
           this.mock = await CharityProject.new(
-            this.feeInMillis,
+            feeInMillis,
             this.maxGoal,
             0,
             this.closingTime,
@@ -456,7 +460,7 @@ contract('CharityProject', function (accounts) {
       describe('if closing time is equal to zero', function () {
         beforeEach(async function () {
           this.mock = await CharityProject.new(
-            this.feeInMillis,
+            feeInMillis,
             this.maxGoal,
             this.openingTime,
             0,
@@ -542,8 +546,9 @@ contract('CharityProject', function (accounts) {
 
     describe('if is reached and then withdrawn', function () {
       it('maxGoalReached should be true', async function () {
-        await this.token.transfer(this.mock.address, this.maxGoal.add(1), { from: userWallet });
-        await this.mock.withdrawTokens(onlusWallet, this.maxGoal.add(1), { from: owner });
+        await this.token.transfer(this.mock.address, this.maxGoal, { from: userWallet });
+        await this.mock.withdrawTokens(onlusWallet, expectedMaxTokens, { from: owner });
+        await this.mock.withdrawFees(anyone, expectedMaxFee, { from: owner });
         const maxGoalReached = await this.mock.maxGoalReached();
         maxGoalReached.should.be.equal(true);
       });
@@ -556,7 +561,6 @@ contract('CharityProject', function (accounts) {
     });
 
     it('should accept token payments', async function () {
-      const tokenAmount = new BigNumber(200);
       const pre = await this.token.balanceOf(this.mock.address);
       await this.token.transfer(this.mock.address, tokenAmount, { from: userWallet });
       const post = await this.token.balanceOf(this.mock.address);
@@ -566,8 +570,6 @@ contract('CharityProject', function (accounts) {
 
   context('withdraw tokens', function () {
     describe('if can withdraw before end', function () {
-      const tokenAmount = new BigNumber(20000);
-
       beforeEach(async function () {
         await this.token.transfer(this.mock.address, tokenAmount, { from: userWallet });
       });
@@ -575,7 +577,7 @@ contract('CharityProject', function (accounts) {
       context('if has permission', function () {
         describe('if owner is calling', function () {
           it('transfer tokens to the selected wallet', async function () {
-            const withdrawAmount = new BigNumber(200);
+            const withdrawAmount = expectedMaxTokens;
 
             const preMock = await this.token.balanceOf(this.mock.address);
             const preWallet = await this.token.balanceOf(onlusWallet);
@@ -592,7 +594,7 @@ contract('CharityProject', function (accounts) {
 
         describe('if wallet is calling', function () {
           it('transfer tokens to the selected wallet', async function () {
-            const withdrawAmount = new BigNumber(200);
+            const withdrawAmount = expectedMaxTokens;
 
             const preMock = await this.token.balanceOf(this.mock.address);
             const preWallet = await this.token.balanceOf(onlusWallet);
@@ -609,7 +611,7 @@ contract('CharityProject', function (accounts) {
 
         describe('if additional manager is calling', function () {
           it('transfer tokens to the selected wallet', async function () {
-            const withdrawAmount = new BigNumber(200);
+            const withdrawAmount = expectedMaxTokens;
 
             const preMock = await this.token.balanceOf(this.mock.address);
             const preWallet = await this.token.balanceOf(onlusWallet);
@@ -626,7 +628,7 @@ contract('CharityProject', function (accounts) {
 
         describe('if destination wallet is zero address', function () {
           it('reverts', async function () {
-            const withdrawAmount = new BigNumber(200);
+            const withdrawAmount = expectedMaxTokens;
 
             await shouldFail.reverting(
               this.mock.withdrawTokens(ZERO_ADDRESS, withdrawAmount, { from: owner })
@@ -636,7 +638,7 @@ contract('CharityProject', function (accounts) {
 
         describe('if trying to move more tokens than raised', function () {
           it('reverts', async function () {
-            const withdrawAmount = tokenAmount.plus(1);
+            const withdrawAmount = expectedMaxTokens.plus(1);
 
             await shouldFail.reverting(
               this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: owner })
@@ -645,7 +647,7 @@ contract('CharityProject', function (accounts) {
         });
 
         it('withdrawnTokens value should track withdrawn', async function () {
-          const withdrawAmount = new BigNumber(200);
+          const withdrawAmount = expectedMaxTokens;
           await this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: owner });
 
           const withdrawnTokens = await this.mock.withdrawnTokens();
@@ -655,7 +657,7 @@ contract('CharityProject', function (accounts) {
 
       describe('if hasn\'t permission (anyone is calling)', function () {
         it('reverts', async function () {
-          const withdrawAmount = new BigNumber(200);
+          const withdrawAmount = expectedMaxTokens;
 
           await shouldFail.reverting(
             this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: anyone })
@@ -665,13 +667,11 @@ contract('CharityProject', function (accounts) {
     });
 
     describe('if can\'t withdraw before end', function () {
-      const tokenAmount = new BigNumber(20000);
-
       context('if has permission', function () {
         describe('withdraw before end', function () {
           it('reverts', async function () {
             this.mock = await CharityProject.new(
-              this.feeInMillis,
+              feeInMillis,
               this.maxGoal,
               this.openingTime,
               this.closingTime,
@@ -683,7 +683,7 @@ contract('CharityProject', function (accounts) {
             );
             await this.token.transfer(this.mock.address, tokenAmount, { from: userWallet });
 
-            const withdrawAmount = new BigNumber(200);
+            const withdrawAmount = expectedMaxTokens;
             await shouldFail.reverting(
               this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: owner })
             );
@@ -693,7 +693,7 @@ contract('CharityProject', function (accounts) {
         describe('withdraw after end', function () {
           it('success', async function () {
             this.mock = await CharityProject.new(
-              this.feeInMillis,
+              feeInMillis,
               this.maxGoal,
               this.openingTime,
               this.closingTime,
@@ -707,7 +707,7 @@ contract('CharityProject', function (accounts) {
 
             await time.increaseTo(this.afterClosingTime);
 
-            const withdrawAmount = new BigNumber(200);
+            const withdrawAmount = expectedMaxTokens;
             await this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: owner });
           });
         });
@@ -715,7 +715,7 @@ contract('CharityProject', function (accounts) {
         describe('withdraw before end with closing time equal to 0', function () {
           it('success', async function () {
             this.mock = await CharityProject.new(
-              this.feeInMillis,
+              feeInMillis,
               this.maxGoal,
               this.openingTime,
               0,
@@ -727,7 +727,7 @@ contract('CharityProject', function (accounts) {
             );
             await this.token.transfer(this.mock.address, tokenAmount, { from: userWallet });
 
-            const withdrawAmount = new BigNumber(200);
+            const withdrawAmount = expectedMaxTokens;
             await this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: owner });
           });
         });
@@ -737,8 +737,6 @@ contract('CharityProject', function (accounts) {
 
   context('withdraw fees', function () {
     describe('if can withdraw before end', function () {
-      const tokenAmount = new BigNumber(20000);
-
       beforeEach(async function () {
         await this.token.transfer(this.mock.address, tokenAmount, { from: userWallet });
       });
@@ -746,7 +744,7 @@ contract('CharityProject', function (accounts) {
       context('if has permission', function () {
         describe('if owner is calling', function () {
           it('transfer tokens to the selected wallet', async function () {
-            const withdrawAmount = new BigNumber(200);
+            const withdrawAmount = expectedMaxFee;
 
             const preMock = await this.token.balanceOf(this.mock.address);
             const preWallet = await this.token.balanceOf(anyone);
@@ -763,7 +761,7 @@ contract('CharityProject', function (accounts) {
 
         describe('if wallet is calling', function () {
           it('reverts', async function () {
-            const withdrawAmount = new BigNumber(200);
+            const withdrawAmount = expectedMaxFee;
 
             await shouldFail.reverting(
               this.mock.withdrawFees(anyone, withdrawAmount, { from: onlusWallet })
@@ -773,7 +771,7 @@ contract('CharityProject', function (accounts) {
 
         describe('if additional manager is calling', function () {
           it('reverts', async function () {
-            const withdrawAmount = new BigNumber(200);
+            const withdrawAmount = expectedMaxFee;
 
             await shouldFail.reverting(
               this.mock.withdrawFees(anyone, withdrawAmount, { from: additionalManager })
@@ -783,7 +781,7 @@ contract('CharityProject', function (accounts) {
 
         describe('if destination wallet is zero address', function () {
           it('reverts', async function () {
-            const withdrawAmount = new BigNumber(200);
+            const withdrawAmount = expectedMaxFee;
 
             await shouldFail.reverting(
               this.mock.withdrawFees(ZERO_ADDRESS, withdrawAmount, { from: owner })
@@ -793,7 +791,7 @@ contract('CharityProject', function (accounts) {
 
         describe('if trying to move more tokens than authorized', function () {
           it('reverts', async function () {
-            const withdrawAmount = tokenAmount.plus(1);
+            const withdrawAmount = expectedMaxFee.plus(1);
 
             await shouldFail.reverting(
               this.mock.withdrawFees(anyone, withdrawAmount, { from: owner })
@@ -802,7 +800,7 @@ contract('CharityProject', function (accounts) {
         });
 
         it('withdrawnFees value should track withdrawn', async function () {
-          const withdrawAmount = new BigNumber(200);
+          const withdrawAmount = expectedMaxFee;
           await this.mock.withdrawFees(anyone, withdrawAmount, { from: owner });
 
           const withdrawnFees = await this.mock.withdrawnFees();
@@ -812,7 +810,7 @@ contract('CharityProject', function (accounts) {
 
       describe('if hasn\'t permission (anyone is calling)', function () {
         it('reverts', async function () {
-          const withdrawAmount = new BigNumber(200);
+          const withdrawAmount = expectedMaxFee;
 
           await shouldFail.reverting(
             this.mock.withdrawFees(anyone, withdrawAmount, { from: anyone })
@@ -822,13 +820,11 @@ contract('CharityProject', function (accounts) {
     });
 
     describe('if can\'t withdraw before end', function () {
-      const tokenAmount = new BigNumber(20000);
-
       context('if has permission', function () {
         describe('withdraw before end', function () {
           it('reverts', async function () {
             this.mock = await CharityProject.new(
-              this.feeInMillis,
+              feeInMillis,
               this.maxGoal,
               this.openingTime,
               this.closingTime,
@@ -840,7 +836,7 @@ contract('CharityProject', function (accounts) {
             );
             await this.token.transfer(this.mock.address, tokenAmount, { from: userWallet });
 
-            const withdrawAmount = new BigNumber(200);
+            const withdrawAmount = expectedMaxFee;
             await shouldFail.reverting(
               this.mock.withdrawFees(anyone, withdrawAmount, { from: owner })
             );
@@ -850,7 +846,7 @@ contract('CharityProject', function (accounts) {
         describe('withdraw after end', function () {
           it('success', async function () {
             this.mock = await CharityProject.new(
-              this.feeInMillis,
+              feeInMillis,
               this.maxGoal,
               this.openingTime,
               this.closingTime,
@@ -864,7 +860,7 @@ contract('CharityProject', function (accounts) {
 
             await time.increaseTo(this.afterClosingTime);
 
-            const withdrawAmount = new BigNumber(200);
+            const withdrawAmount = expectedMaxFee;
             await this.mock.withdrawFees(anyone, withdrawAmount, { from: owner });
           });
         });
@@ -872,7 +868,7 @@ contract('CharityProject', function (accounts) {
         describe('withdraw before end with closing time equal to 0', function () {
           it('success', async function () {
             this.mock = await CharityProject.new(
-              this.feeInMillis,
+              feeInMillis,
               this.maxGoal,
               this.openingTime,
               0,
@@ -884,7 +880,7 @@ contract('CharityProject', function (accounts) {
             );
             await this.token.transfer(this.mock.address, tokenAmount, { from: userWallet });
 
-            const withdrawAmount = new BigNumber(200);
+            const withdrawAmount = expectedMaxFee;
             await this.mock.withdrawFees(anyone, withdrawAmount, { from: owner });
           });
         });
@@ -902,7 +898,6 @@ contract('CharityProject', function (accounts) {
 
     describe('after donation', function () {
       it('should be equal to donation', async function () {
-        const tokenAmount = new BigNumber(20000);
         await this.token.transfer(this.mock.address, tokenAmount, { from: userWallet });
 
         const raised = await this.mock.totalRaised();
@@ -912,10 +907,9 @@ contract('CharityProject', function (accounts) {
 
     describe('after withdraw', function () {
       it('should be equal to donation', async function () {
-        const tokenAmount = new BigNumber(20000);
         await this.token.transfer(this.mock.address, tokenAmount, { from: userWallet });
 
-        const withdrawAmount = new BigNumber(200);
+        const withdrawAmount = expectedMaxTokens;
         await this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: owner });
 
         const raised = await this.mock.totalRaised();
@@ -925,12 +919,10 @@ contract('CharityProject', function (accounts) {
 
     describe('after withdraw of tokens and fee', function () {
       it('should be equal to donation', async function () {
-        const tokenAmount = new BigNumber(20000);
         await this.token.transfer(this.mock.address, tokenAmount, { from: userWallet });
 
-        const withdrawAmount = new BigNumber(200);
-        await this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: owner });
-        await this.mock.withdrawFees(anyone, withdrawAmount, { from: owner });
+        await this.mock.withdrawTokens(onlusWallet, expectedMaxTokens, { from: owner });
+        await this.mock.withdrawFees(anyone, expectedMaxFee, { from: owner });
 
         const raised = await this.mock.totalRaised();
         raised.should.be.bignumber.equal(tokenAmount);
@@ -948,45 +940,38 @@ contract('CharityProject', function (accounts) {
 
     describe('after donation', function () {
       it('should be equal to a percent of donation', async function () {
-        const tokenAmount = new BigNumber(20000);
         await this.token.transfer(this.mock.address, tokenAmount, { from: userWallet });
 
         const totalFee = await this.mock.totalFee();
-        totalFee.should.be.bignumber.equal(tokenAmount.mul(this.feeInMillis).div(1000));
+        totalFee.should.be.bignumber.equal(expectedMaxFee);
       });
     });
 
     describe('after withdraw', function () {
       it('should be equal to a percent of donation', async function () {
-        const tokenAmount = new BigNumber(20000);
         await this.token.transfer(this.mock.address, tokenAmount, { from: userWallet });
 
-        const withdrawAmount = new BigNumber(200);
-        await this.mock.withdrawFees(anyone, withdrawAmount, { from: owner });
+        await this.mock.withdrawFees(anyone, expectedMaxFee, { from: owner });
 
         const totalFee = await this.mock.totalFee();
-        totalFee.should.be.bignumber.equal(tokenAmount.mul(this.feeInMillis).div(1000));
+        totalFee.should.be.bignumber.equal(expectedMaxFee);
       });
     });
 
     describe('after withdraw of fee and tokens', function () {
       it('should be equal to a percent of donation', async function () {
-        const tokenAmount = new BigNumber(20000);
         await this.token.transfer(this.mock.address, tokenAmount, { from: userWallet });
 
-        const withdrawAmount = new BigNumber(200);
-        await this.mock.withdrawFees(anyone, withdrawAmount, { from: owner });
-        await this.mock.withdrawTokens(onlusWallet, withdrawAmount, { from: owner });
+        await this.mock.withdrawFees(anyone, expectedMaxFee, { from: owner });
+        await this.mock.withdrawTokens(onlusWallet, expectedMaxTokens, { from: owner });
 
         const totalFee = await this.mock.totalFee();
-        totalFee.should.be.bignumber.equal(tokenAmount.mul(this.feeInMillis).div(1000));
+        totalFee.should.be.bignumber.equal(expectedMaxFee);
       });
     });
   });
 
   context('recover tokens from contract', function () {
-    const tokenAmount = new BigNumber(1000);
-
     beforeEach(async function () {
       this.anotherERC20 = await ERC20Mock.new(this.mock.address, tokenAmount, { from: owner });
     });
